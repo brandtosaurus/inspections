@@ -79,6 +79,12 @@ def psql_insert_copy(table, conn, keys, data_iter):
 df = pd.read_csv(CSV, low_memory=False)
 ancillary_data = pd.read_csv(CSV_ANCILLARY, low_memory=False)
 
+for col in df.columns:
+    try:
+        df[col] = df[col].astype(int).fillna(0)
+    except:
+        pass
+
 df[
     [
         "version",
