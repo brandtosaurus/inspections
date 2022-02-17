@@ -3,6 +3,7 @@ import geopandas as gpd
 import pandas as pd
 from sqlalchemy import create_engine
 import pandasql
+from sympy import E1
 
 ENGINE = create_engine(
     "postgresql://postgres:$admin@localhost:5432/asset_management_master"
@@ -166,7 +167,7 @@ def calculate_mni(df):
 # ###########################################
 
 
-def stci_deduct_Block_calc(df, df2):
+def deduct_block_calc(df, df2):
     filter_cols = [col for col in df if col.startswith("b_")]
     filter_cols = filter_cols.append("assessment_id")
     df = df.loc[:, df[filter_cols]]
@@ -198,21 +199,21 @@ def stci_deduct_Block_calc(df, df2):
         de16 = str(row["b_shoulders_paved"] * 10)
 
         de1 = list(df2.loc[df2["de"] == str(de1)]["cracking"])[0]
-        de2 = list(df2.loc[df2["de"] == str(de1)]["edge_restraints"])[0]
-        de3 = list(df2.loc[df2["de"] == str(de1)]["pumping"])[0]
-        de4 = list(df2.loc[df2["de"] == str(de1)]["rutting"])[0]
-        de5 = list(df2.loc[df2["de"] == str(de1)]["failures"])[0]
-        de6 = list(df2.loc[df2["de"] == str(de1)]["potholes"])[0]
-        de7 = list(df2.loc[df2["de"] == str(de1)]["patching"])[0]
-        de8 = list(df2.loc[df2["de"] == str(de1)]["reinstatements"])[0]
-        de9 = list(df2.loc[df2["de"] == str(de1)]["surface_integrity"])[0]
-        de10 = list(df2.loc[df2["de"] == str(de1)]["joint_sand"])[0]
-        de11 = list(df2.loc[df2["de"] == str(de1)]["undulation"])[0]
-        de12 = list(df2.loc[df2["de"] == str(de1)]["riding_quality"])[0]
-        de13 = list(df2.loc[df2["de"] == str(de1)]["skid_resistance"])[0]
-        de14 = list(df2.loc[df2["de"] == str(de1)]["surface_drainage"])[0]
-        de15 = list(df2.loc[df2["de"] == str(de1)]["shoulders_unpaved"])[0]
-        de16 = list(df2.loc[df2["de"] == str(de1)]["shoulders_paved"])[0]
+        de2 = list(df2.loc[df2["de"] == str(de2)]["edge_restraints"])[0]
+        de3 = list(df2.loc[df2["de"] == str(de3)]["pumping"])[0]
+        de4 = list(df2.loc[df2["de"] == str(de4)]["rutting"])[0]
+        de5 = list(df2.loc[df2["de"] == str(de5)]["failures"])[0]
+        de6 = list(df2.loc[df2["de"] == str(de6)]["potholes"])[0]
+        de7 = list(df2.loc[df2["de"] == str(de7)]["patching"])[0]
+        de8 = list(df2.loc[df2["de"] == str(de8)]["reinstatements"])[0]
+        de9 = list(df2.loc[df2["de"] == str(de9)]["surface_integrity"])[0]
+        de10 = list(df2.loc[df2["de"] == str(de10)]["joint_sand"])[0]
+        de11 = list(df2.loc[df2["de"] == str(de11)]["undulation"])[0]
+        de12 = list(df2.loc[df2["de"] == str(de12)]["riding_quality"])[0]
+        de13 = list(df2.loc[df2["de"] == str(de13)]["skid_resistance"])[0]
+        de14 = list(df2.loc[df2["de"] == str(de14)]["surface_drainage"])[0]
+        de15 = list(df2.loc[df2["de"] == str(de15)]["shoulders_unpaved"])[0]
+        de16 = list(df2.loc[df2["de"] == str(de16)]["shoulders_paved"])[0]
 
         sorted_list = sorted(
             [
@@ -236,7 +237,7 @@ def stci_deduct_Block_calc(df, df2):
             reverse=True,
         )
 
-        stci = round(
+        index = round(
             100
             - sorted_list[0]
             - 0.3 * sorted_list[1]
@@ -246,66 +247,414 @@ def stci_deduct_Block_calc(df, df2):
             - 0.05 * sorted_list[5]
         )
 
-        df["fci_deduct"] = stci
-        df["structural_condition_index_stci"] = stci
+        df["index"] = index
 
     return df
 
 
-def stci_deduct_conc_calc(df):
+def deduct_conc_calc(df, df2):
     filter_cols = [col for col in df if col.startswith("c_")]
     filter_cols = filter_cols.append("assessment_id")
     df = df.loc[:, df[filter_cols]]
+
+    for idx, row in df.iterrows():
+
+        de1 = str(row["c_joint_sealant_degree"]) + str(row["c_joint_sealant_extent"])
+        de2 = str(row["c_undulation_settlement_degree"]) + str(
+            row["c_undulation_settlement_extent"]
+        )
+        de3 = str(row["c_joint_associated_cracks_degree"]) + str(
+            row["c_joint_associated_cracks_extent"]
+        )
+        de4 = str(row["c_spalled_joints_degree"]) + str(row["c_spalled_joints_extent"])
+        de5 = str(row["c_cracks_random_degree"]) + str(row["c_cracks_random_extent"])
+        de6 = str(row["c_cracks_longitudinal_degree"]) + str(
+            row["c_cracks_longitudinal_extent"]
+        )
+        de7 = str(row["c_cracks_transverse_degree"]) + str(
+            row["c_cracks_transverse_extent"]
+        )
+        de8 = str(row["c_corner_breaks_degree"]) + str(row["c_corner_breaks_extent"])
+        de9 = str(row["c_cracks_cluster_degree"]) + str(row["c_cracks_cluster_extent"])
+        de10 = str(row["c_cracked_slabs_degree"]) + str(row["c_cracked_slabs_extent"])
+        de11 = str(row["c_shattered_slabs_degree"]) + str(
+            row["c_shattered_slabs_extent"]
+        )
+
+        de12 = str(row["c_faulting_degree"]) + str(row["c_faulting_extent"])
+        de13 = str(row["c_failures_degree"]) + str(row["c_failures_extent"])
+        de14 = str(row["c_patching_degree"]) + str(row["c_patching_extent"])
+        de15 = str(row["c_punchouts_degree"]) + str(row["c_punchouts_extent"])
+        de16 = str(row["c_pumping_degree"]) + str(row["c_pumping_extent"])
+
+        de17 = str(row["c_riding_quality"] * 10)
+        de18 = str(row["c_skid_resistance"] * 10)
+        de19 = str(row["c_shoulders_unpaved"] * 10)
+        de20 = str(row["c_shoulders_paved"] * 10)
+
+        de1 = list(df2.loc[df2["de"] == str(de1)]["joint_sealant"])[0]
+        de2 = list(df2.loc[df2["de"] == str(de2)]["concrete_durability"])[0]
+        de3 = list(df2.loc[df2["de"] == str(de3)]["joint_associated_cracks"])[0]
+        de4 = list(df2.loc[df2["de"] == str(de4)]["spalled_joints"])[0]
+        de5 = list(df2.loc[df2["de"] == str(de5)]["cracks_random"])[0]
+        de6 = list(df2.loc[df2["de"] == str(de6)]["cracks_longit"])[0]
+        de7 = list(df2.loc[df2["de"] == str(de7)]["cracks_transverse"])[0]
+        de8 = list(df2.loc[df2["de"] == str(de8)]["corner_breaks"])[0]
+        de9 = list(df2.loc[df2["de"] == str(de9)]["cracks_cluster"])[0]
+        de10 = list(df2.loc[df2["de"] == str(de10)]["cracked_slabs"])[0]
+        de11 = list(df2.loc[df2["de"] == str(de11)]["shattered_slabs"])[0]
+        de12 = list(df2.loc[df2["de"] == str(de12)]["faulting"])[0]
+        de13 = list(df2.loc[df2["de"] == str(de13)]["failures"])[0]
+        de14 = list(df2.loc[df2["de"] == str(de14)]["patching"])[0]
+        de15 = list(df2.loc[df2["de"] == str(de15)]["punchouts"])[0]
+        de16 = list(df2.loc[df2["de"] == str(de16)]["pumping"])[0]
+        de17 = list(df2.loc[df2["de"] == str(de17)]["riding_quality"])[0]
+        de18 = list(df2.loc[df2["de"] == str(de18)]["skid_resistance"])[0]
+        de19 = list(df2.loc[df2["de"] == str(de19)]["shoulders_unpaved"])[0]
+        de20 = list(df2.loc[df2["de"] == str(de20)]["shoulders_paved"])[0]
+
+        sorted_list = sorted(
+            [
+                de1,
+                de2,
+                de3,
+                de4,
+                de5,
+                de6,
+                de7,
+                de8,
+                de9,
+                de10,
+                de11,
+                de12,
+                de13,
+                de14,
+                de15,
+                de16,
+                de17,
+                de18,
+                de19,
+                de20,
+            ],
+            reverse=True,
+        )
+
+        index = round(
+            100
+            - sorted_list[0]
+            - 0.3 * sorted_list[1]
+            - 0.1 * sorted_list[2]
+            - 0.05 * sorted_list[3]
+            - 0.05 * sorted_list[4]
+            - 0.05 * sorted_list[5]
+        )
+
+        df["index"] = index
+
     return df
 
 
-def stci_deduct_unpaved_calc(df):
+def deduct_unpaved_calc(df, df2):
     filter_cols = [col for col in df if col.startswith("u_")]
     filter_cols = filter_cols.append("assessment_id")
     df = df.loc[:, df[filter_cols]]
+
+    for idx, row in df.iterrows():
+
+        if row["u_material_quality"] == "0":
+            e1 = str("0")
+        else:
+            e1 = str("3")
+
+        if row["u_material_quality"] == "0":
+            e2 = str("0")
+        else:
+            e2 = str("3")
+
+        de1 = str(row["u_material_quality"]) + str(e1)
+        de2 = str(row["u_material_quantity"]) + str(e2)
+        de3 = str(row["u_potholes_degree"]) + str(row["u_potholes_extent"])
+        de4 = str(row["u_corrugations_degree"]) + str(row["u_corrugations_extent"])
+        de5 = str(row["u_rutting_degree"]) + str(row["u_rutting_extent"])
+        de6 = str(row["u_loosematerial_degree"]) + str(row["u_loosematerial_extent"])
+        de7 = str(row["u_stoniness_fixed_degree"]) + str(
+            row["u_stoniness_fixed_extent"]
+        )
+        de8 = str(row["u_stoniness_loose_degree"]) + str(
+            row["u_stoniness_loose_extent"]
+        )
+        de9 = str(row["u_erosion_longitudinal_degree"]) + str(
+            row["u_erosion_longitudinal_extent"]
+        )
+        de10 = str(row["u_erosion_transverse_degree"]) + str(
+            row["u_erosion_transverse_extent"]
+        )
+
+        de11 = str(row["u_roughness"] * 10)
+        de12 = str(row["u_transverse_profile"] * 10)
+        de13 = str(row["u_transverse_profile"] * 10)
+        de14 = str(row["u_trafficability"] * 10)
+        de15 = str(row["u_safety"] * 10)
+        de16 = str(row["u_drainage_road"] * 10)
+        de17 = str(row["u_drainage_roadside"] * 10)
+
+        de1 = list(df2.loc[df2["de"] == str(de1)]["unpaved_gravel_quality"])[0]
+        de2 = list(df2.loc[df2["de"] == str(de2)]["gravel_thickness"])[0]
+        de3 = list(df2.loc[df2["de"] == str(de3)]["potholes"])[0]
+        de4 = list(df2.loc[df2["de"] == str(de4)]["corrugations"])[0]
+        de5 = list(df2.loc[df2["de"] == str(de5)]["rutting"])[0]
+        de6 = list(df2.loc[df2["de"] == str(de6)]["loose_material"])[0]
+        de7 = list(df2.loc[df2["de"] == str(de7)]["stones_fixed"])[0]
+        de8 = list(df2.loc[df2["de"] == str(de8)]["stones_loose"])[0]
+        de9 = list(df2.loc[df2["de"] == str(de9)]["erosion_longitudinal"])[0]
+        de10 = list(df2.loc[df2["de"] == str(de10)]["erosion_transverse"])[0]
+
+        de11 = list(df2.loc[df2["de"] == str(de11)]["unpaved_riding_quality"])[0]
+        de12 = list(df2.loc[df2["de"] == str(de12)]["surface_profile"])[0]
+        de13 = list(df2.loc[df2["de"] == str(de13)]["cross_section"])[0]
+        de14 = list(df2.loc[df2["de"] == str(de14)]["traffickability"])[0]
+        de15 = list(df2.loc[df2["de"] == str(de15)]["safety"])[0]
+        de16 = list(df2.loc[df2["de"] == str(de16)]["drainage_on_road"])[0]
+        de17 = list(df2.loc[df2["de"] == str(de17)]["drainage_roadside"])[0]
+
+        sorted_list = sorted(
+            [
+                de1,
+                de2,
+                de3,
+                de4,
+                de5,
+                de6,
+                de7,
+                de8,
+                de9,
+                de10,
+                de11,
+                de12,
+                de13,
+                de14,
+                de15,
+                de16,
+                de17,
+            ],
+            reverse=True,
+        )
+
+        index = round(
+            100
+            - sorted_list[0]
+            - 0.3 * sorted_list[1]
+            - 0.1 * sorted_list[2]
+            - 0.05 * sorted_list[3]
+            - 0.05 * sorted_list[4]
+            - 0.05 * sorted_list[5]
+        )
+
+        df["index"] = index
+
     return df
 
 
-def stci_deduct_flex_calc(df):
+def deduct_flex_calc(df, df2):
     filter_cols = [col for col in df if col.startswith("f_")]
     filter_cols = filter_cols.append("assessment_id")
     df = df.loc[:, df[filter_cols]]
+
+    for idx, row in df.iterrows():
+
+        de1 = str(row["f_surface_failure_degree"]) + str(
+            row["f_surface_failure_extent"]
+        )
+        de2 = str(row["f_surface_cracking_degree"]) + str(
+            row["f_surface_cracking_extent"]
+        )
+        sla = str(row["f_stone_loss_active"])
+        de3 = str(row["f_stone_loss_degree"]) + str(row["f_stone_loss_extent"])
+        de4 = str(row["f_surface_patching_degree"]) + str(
+            row["f_surface_patching_extent"]
+        )
+        de5 = str(row["f_binder_condition_degree"]) + str(
+            row["f_binder_condition_extent"]
+        )
+        de6 = str(row["f_bleeding_degree"]) + str(row["f_bleeding_extent"])
+        de7 = str(row["f_block_cracks_degree"]) + str(row["f_block_cracks_extent"])
+        de8 = str(row["f_longitudinal_cracks_degree"]) + str(
+            row["f_longitudinal_cracks_extent"]
+        )
+        de9 = str(row["f_transverse_cracks_degree"]) + str(
+            row["f_transverse_cracks_extent"]
+        )
+        de10 = str(row["f_crocodile_cracks_degree"]) + str(
+            row["f_crocodile_cracks_extent"]
+        )
+
+        de11 = str(row["f_pumping_degree"]) + str(row["f_pumping_extent"])
+        de12 = str(row["f_rutting_degree"]) + str(row["f_rutting_extent"])
+        de13 = str(row["f_shoving_degree"]) + str(row["f_shoving_extent"])
+        de14 = str(row["f_undulation_degree"]) + str(row["f_undulation_extent"])
+        de15 = str(row["f_patching_degree"]) + str(row["f_patching_extent"])
+        de16 = str(row["f_failures_degree"]) + str(row["f_failures_extent"])
+        de17 = str(row["f_edge_breaking_degree"]) + str(row["f_edge_breaking_extent"])
+
+        de18 = str(row["f_riding_quality"] * 10)
+        de19 = str(row["f_skid_resistance"] * 10)
+        de20 = str(row["f_surface_drainage"] * 10)
+        de21 = str(row["f_shoulders_unpaved"] * 10)
+        de22 = str(row["f_shoulders_paved"] * 10)
+
+        de1 = list(df2.loc[df2["de"] == str(de1)]["surface_failure"])[0]
+        de2 = list(df2.loc[df2["de"] == str(de2)]["surface_cracking"])[0]
+        if sla == "A":
+            de3 = list(df2.loc[df2["de"] == str(de3)]["stone_loss_active"])[0]
+        else:
+            de3 = list(df2.loc[df2["de"] == str(de3)]["stone_loss"])[0]
+        de4 = list(df2.loc[df2["de"] == str(de4)]["surface_patching"])[0]
+        de5 = list(df2.loc[df2["de"] == str(de5)]["dry"])[0]
+        de6 = list(df2.loc[df2["de"] == str(de6)]["bleeding"])[0]
+        de7 = list(df2.loc[df2["de"] == str(de7)]["block_cracks"])[0]
+        de8 = list(df2.loc[df2["de"] == str(de8)]["longitudinal_cracks"])[0]
+        de9 = list(df2.loc[df2["de"] == str(de9)]["transverse_cracks"])[0]
+        de10 = list(df2.loc[df2["de"] == str(de10)]["crocodile_cracks"])[0]
+
+        de11 = list(df2.loc[df2["de"] == str(de11)]["pumping"])[0]
+        de12 = list(df2.loc[df2["de"] == str(de12)]["rutting"])[0]
+        de13 = list(df2.loc[df2["de"] == str(de13)]["shoving"])[0]
+        de14 = list(df2.loc[df2["de"] == str(de14)]["undulation"])[0]
+        de15 = list(df2.loc[df2["de"] == str(de15)]["patching"])[0]
+        de16 = list(df2.loc[df2["de"] == str(de16)]["failures"])[0]
+        de17 = list(df2.loc[df2["de"] == str(de17)]["edge_breaking"])[0]
+        de18 = list(df2.loc[df2["de"] == str(de18)]["riding_quality"])[0]
+        de19 = list(df2.loc[df2["de"] == str(de19)]["skid_resistance"])[0]
+        de20 = list(df2.loc[df2["de"] == str(de20)]["surface_drainage"])[0]
+        de21 = list(df2.loc[df2["de"] == str(de21)]["shoulders_unpaved"])[0]
+        de22 = list(df2.loc[df2["de"] == str(de22)]["shoulders_paved"])[0]
+
+        sorted_list = sorted(
+            [
+                de1,
+                de2,
+                de3,
+                de4,
+                de5,
+                de6,
+                de7,
+                de8,
+                de9,
+                de10,
+                de11,
+                de12,
+                de13,
+                de14,
+                de15,
+                de16,
+                de17,
+                de18,
+                de19,
+                de20,
+                de21,
+                de22,
+            ],
+            reverse=True,
+        )
+
+        index = round(
+            100
+            - sorted_list[0]
+            - 0.3 * sorted_list[1]
+            - 0.1 * sorted_list[2]
+            - 0.05 * sorted_list[3]
+            - 0.05 * sorted_list[4]
+            - 0.05 * sorted_list[5]
+        )
+
+        df["index"] = index
+
     return df
 
 
-# ###########################################
-# ###########################################
+def vci_deduct_calc(df, df2):
+    filter_cols = [col for col in df if col.startswith("f_")]
+    filter_cols = filter_cols.append("assessment_id")
+    df = df.loc[:, df[filter_cols]].fillna(0)
 
+    df2["dem"] = df2["d_max"] * df2["e_max"] ^ df2["y"] * df2["weight"] * df2["small_n"]
 
-def pci_deduct_Block_calc(df):
+    for idx, row in df.iterrows():
+
+        sla = df["f_stone_loss_active"]
+
+        d1 = row["f_surface_patching_degree"]
+        e1 = row["f_surface_patching_extent"]
+        d2 = row["f_surface_failure_degree"]
+        e2 = row["f_surface_failure_extent"]
+        d3 = row["f_surface_cracking_degree"]
+        e3 = row["f_surface_cracking_extent"]
+        d4 = row["f_stone_loss_degree"]
+        e4 = row["f_stone_loss_extent"]
+        d5 = row["f_binder_condition_degree"]
+        e5 = row["f_binder_condition_extent"]
+        d6 = row["f_bleeding_degree"]
+        e6 = row["f_bleeding_extent"]
+        d7 = row["f_block_cracks_degree"]
+        e7 = row["f_block_cracks_extent"]
+        d8 = row["f_longitudinal_cracks_degree"]
+        e8 = row["f_longitudinal_cracks_extent"]
+        d9 = row["f_transverse_cracks_degree"]
+        e9 = row["f_transverse_cracks_extent"]
+        d10 = row["f_crocodile_cracks_degree"]
+        e10 = row["f_crocodile_cracks_extent"]
+        d11 = row["f_pumping_degree"]
+        e11 = row["f_pumping_extent"]
+        d12 = row["f_rutting_degree"]
+        e12 = row["f_rutting_extent"]
+        d13 = row["f_shoving_degree"]
+        e13 = row["f_shoving_extent"]
+        d14 = row["f_undulation_degree"]
+        e14 = row["f_undulation_extent"]
+        d15 = row["f_patching_degree"]
+        e15 = row["f_patching_extent"]
+        d16 = row["f_failures_degree"]
+        e16 = row["f_failures_extent"]
+        d17 = row["f_edge_breaking_degree"]
+        e17 = row["f_edge_breaking_extent"]
+        d18 = row["f_riding_quality"]
+        e18 = 3
+        d19 = row["f_skid_resistance"]
+        e19 = 3
+        d20 = row["f_surface_drainage"]
+        e20 = 3
+        d21 = row["f_shoulders_unpaved"]
+        e21 = 3
+        d22 = row["f_shoulders_paved"]
+        e22 = 3
+
+        degree_list = [
+            "f_surface_patching_degree",
+            "f_surface_failure_degree",
+            "f_surface_cracking_degree",
+            "f_stone_loss_degree",
+            "f_stone_loss_degree",
+        ]
+
+    if sla == "A":
+        sigma_dem = (
+            df2["dem"].sum(axis=1) - list(df2.loc[df2["id"] == '5N']["dem"])[0]
+        )
+        sigma_de = None
+    else:
+        sigma_dem = (
+            df2["dem"].sum(axis=1) - list(df2.loc[df2["id"] == "5A"]["dem"])[0]
+        )
+        sigma_de = None
+
     return df
 
 
-def pci_deduct_conc_calc(df):
-    return df
+def vgi_deduct_calc(df, df2):
+    filter_cols = [col for col in df if col.startswith("u_")]
+    filter_cols = filter_cols.append("assessment_id")
+    df = df.loc[:, df[filter_cols]]
 
-
-def pci_deduct_flex_calc(df):
-    return df
-
-
-# ###########################################
-# ###########################################
-
-
-def sci_calc(df):
-    return df
-
-
-def sci_flex_deduct_calc(df):
-    return df
-
-
-def vgi_deduct_calc(df):
-    return df
-
-
-def vci_deduct_calc(df):
     return df
 
 
@@ -320,7 +669,6 @@ def main():
     fci_block_lookup_df = pd.read_sql_query(FCI_BLOCK_LOOKUP_QRY, ENGINE)
 
     df = calculate_mni(df)
-    pass
 
 
 if __name__ == "__main__":
