@@ -25,7 +25,16 @@ toast.show_toast(
 
 
 df = pd.read_csv(CSV, low_memory=False)
-roads_df = pd.read_sql_query(ROADS_QRY, ENGINE, index_col="asset_id")
+roads_df = pd.read_sql_query(ROADS_QRY, ENGINE)
+for col in roads_df.columns:
+    try:
+        roads_df[col] = roads_df[col].astype(str)
+    except:
+        pass
+roads_df['local_municipality_id'] = roads_df['local_municipality_id'].astype(int)
+roads_df['town_id'] = roads_df['town_id'].astype(int)
+roads_df['asset_subtype_id'] = roads_df['asset_subtype_id'].astype(int)
+roads_df['length'] = roads_df['length'].astype(float)
 
 df.drop(
     [

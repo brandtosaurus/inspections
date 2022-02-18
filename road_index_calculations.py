@@ -18,7 +18,7 @@ RAINFALL_QRY = """SELECT * FROM base_layers.mean_rainfall"""
 FCI_BLOCK_LOOKUP_QRY = """SELECT * FROM lookups.fci_block_deduct"""
 FCI_CONC_LOOKUP_QRY = """SELECT * FROM lookups.fci_conc_deduct"""
 FCI_FLEX_LOOKUP_QRY = """SELECT * FROM lookups.fci_flex_deduct"""
-FCI_GRAV_LOOKUP_QRY = """SELECT * FROM lookups.fci_grav_deduct"""
+FCI_UNPAVED_LOOKUP_QRY = """SELECT * FROM lookups.fci_grav_deduct"""
 
 PCI_CONC_LOOKUP_QRY = """SELECT * FROM lookups.pci_conc_deduct"""
 PCI_BLOCK_LOOKUP_QRY = """SELECT * FROM lookups.pci_block_deduct"""
@@ -144,7 +144,7 @@ def calculate_mni(df):
     df.rename(columns={"weight": "cond_weight"}, inplace=True)
     df["cond_weight"] = df["cond_weight"].fillna(0)
 
-    df["maintenance_need_index_mni"] = round(
+    df["index"] = round(
         (
             (
                 df["importance_weight"]
@@ -158,7 +158,7 @@ def calculate_mni(df):
         3,
     )
 
-    df = df[["visual_assessment_id", "maintenance_need_index_mni"]]
+    df = df[["visual_assessment_id", "index"]]
 
     return df
 
@@ -168,35 +168,146 @@ def calculate_mni(df):
 
 
 def deduct_block_calc(df, df2):
-    filter_cols = [col for col in df if col.startswith("b_")]
-    filter_cols = filter_cols.append("assessment_id")
-    df = df.loc[:, df[filter_cols]]
-    df.fillna(0)
+    filter_cols = [
+        col for col in df if col.startswith("b_") or col == "visual_assessment_id"
+    ]
+    df = df.loc[:, filter_cols].fillna(0)
 
     for idx, row in df.iterrows():
-        de1 = str(row["b_cracking_degree"]) + str(row["b_cracking_extent"])
-        de2 = str(row["b_edge_restraints_degree"]) + str(
-            row["b_edge_restraints_extent"]
-        )
-        de3 = str(row["b_pumping_degree"]) + str(row["b_pumping_extent"])
-        de4 = str(row["b_rutting_degree"]) + str(row["b_rutting_extent"])
-        de5 = str(row["b_failures_degree"]) + str(row["b_failures_extent"])
-        de6 = str(row["b_potholes_degree"]) + str(row["b_potholes_extent"])
-        de7 = str(row["b_patching_degree"]) + str(row["b_patching_extent"])
-        de8 = str(row["b_reinstatements_degree"]) + str(row["b_reinstatements_extent"])
-        de9 = str(row["b_surface_integrity_degree"]) + str(
-            row["b_surface_integrity_extent"]
-        )
-        de10 = str(row["b_jointingmaterial_degree"]) + str(
-            row["b_jointingmaterial_extent"]
-        )
-        de11 = str(row["b_undulation_degree"]) + str(row["b_undulation_extent"])
+        if str(row["b_cracking_degree"]) == "0" or str(row["b_cracking_extent"]) == "0":
+            de1 = "00"
+        else:
+            de1 = str(row["b_cracking_degree"]) + str(row["b_cracking_extent"])
 
-        de13 = str(row["b_riding_quality"] * 10)
-        de12 = str(row["b_skid_resistance"] * 10)
-        de14 = str(row["b_surface_drainage"] * 10)
-        de15 = str(row["b_shoulders_unpaved"] * 10)
-        de16 = str(row["b_shoulders_paved"] * 10)
+        if (
+            str(row["b_edge_restraints_degree"]) == "0"
+            or str(row["b_edge_restraints_extent"]) == "0"
+        ):
+            de2 = "00"
+        else:
+            de2 = str(row["b_edge_restraints_degree"]) + str(
+                row["b_edge_restraints_extent"]
+            )
+
+        if str(row["b_pumping_degree"]) == "0" or str(row["b_pumping_extent"]) == "0":
+            de3 = "00"
+        else:
+            de3 = str(row["b_pumping_degree"]) + str(row["b_pumping_extent"])
+
+        if str(row["b_rutting_degree"]) == "0" or str(row["b_rutting_extent"]) == "0":
+            de4 = "00"
+        else:
+            de4 = str(row["b_rutting_degree"]) + str(row["b_rutting_extent"])
+
+        if str(row["b_failures_degree"]) == "0" or str(row["b_failures_extent"]) == "0":
+            de5 = "00"
+        else:
+            de5 = str(row["b_failures_degree"]) + str(row["b_failures_extent"])
+
+        if str(row["b_potholes_degree"]) == "0" or str(row["b_potholes_extent"]) == "0":
+            de6 = "00"
+        else:
+            de6 = str(row["b_potholes_degree"]) + str(row["b_potholes_extent"])
+
+        if str(row["b_patching_degree"]) == "0" or str(row["b_patching_extent"]) == "0":
+            de7 = "00"
+        else:
+            de7 = str(row["b_patching_degree"]) + str(row["b_patching_extent"])
+
+        if (
+            str(row["b_reinstatements_degree"]) == "0"
+            or str(row["b_reinstatements_extent"]) == "0"
+        ):
+            de8 = "00"
+        else:
+            de8 = str(row["b_reinstatements_degree"]) + str(
+                row["b_reinstatements_extent"]
+            )
+
+        if (
+            str(row["b_surface_integrity_degree"]) == "0"
+            or str(row["b_surface_integrity_extent"]) == "0"
+        ):
+            de9 = "00"
+        else:
+            de9 = str(row["b_surface_integrity_degree"]) + str(
+                row["b_surface_integrity_extent"]
+            )
+
+        if (
+            str(row["b_jointingmaterial_degree"]) == "0"
+            or str(row["b_jointingmaterial_extent"]) == "0"
+        ):
+            de10 = "00"
+        else:
+            de10 = str(row["b_jointingmaterial_degree"]) + str(
+                row["b_jointingmaterial_extent"]
+            )
+
+        if (
+            str(row["b_undulation_degree"]) == "0"
+            or str(row["b_undulation_extent"]) == "0"
+        ):
+            de11 = "00"
+        else:
+            de11 = str(row["b_undulation_degree"]) + str(row["b_undulation_extent"])
+
+        d12 = str(row["b_riding_quality"] * 10)
+        d13 = str(row["b_skid_resistance"] * 10)
+        d14 = str(row["b_surface_drainage"] * 10)
+        d15 = str(row["b_shoulders_unpaved"] * 10)
+        d16 = str(row["b_shoulders_paved"] * 10)
+
+        if d12[:1] == "1":
+            e12 = "1"
+        elif d12[1:2] == "0" or d12[1:2] is None:
+            e12 = "1"
+        elif len(d12) == 1:
+            e12 = "0"
+        else:
+            e12 = d12[1:2]
+
+        if d13[:1] == "1":
+            e13 = "1"
+        elif d13[1:2] == "0" or d13[1:2] is None:
+            e13 = "1"
+        elif len(d13) == 1:
+            e13 = "0"
+        else:
+            e13 = d13[1:2]
+
+        if d14[:1] == "1":
+            e14 = "1"
+        elif d14[1:2] == "0" or d14[1:2] is None:
+            e14 = "1"
+        elif len(d14) == 1:
+            e14 = "0"
+        else:
+            e14 = d14[1:2]
+
+        if d15[:1] == "1":
+            e15 = "1"
+        elif d15[1:2] == "0" or d15[1:2] is None:
+            e15 = "1"
+        elif len(d15) == 1:
+            e15 = "0"
+        else:
+            e15 = d15[1:2]
+
+        if d16[:1] == "1":
+            e16 = "1"
+        elif d16[1:2] == "0":
+            e16 = "1"
+        elif len(d16) == 1:
+            e16 = "0"
+        else:
+            e16 = d16[1:2]
+
+        de12 = d12[:1] + e12
+        de13 = d13[:1] + e13
+        de14 = d14[:1] + e14
+        de15 = d15[:1] + e15
+        de16 = d16[:1] + e16
 
         de1 = list(df2.loc[df2["de"] == str(de1)]["cracking"])[0]
         de2 = list(df2.loc[df2["de"] == str(de2)]["edge_restraints"])[0]
@@ -247,50 +358,209 @@ def deduct_block_calc(df, df2):
             - 0.05 * sorted_list[5]
         )
 
-        df["index"] = index
+        df.at[idx, "index"] = index
+
+    df.drop(
+        df.columns.difference(["visual_assessment_id", "index"]), axis=1, inplace=True
+    )
 
     return df
 
 
 def deduct_conc_calc(df, df2):
-    filter_cols = [col for col in df if col.startswith("c_")]
-    filter_cols = filter_cols.append("assessment_id")
-    df = df.loc[:, df[filter_cols]]
+    filter_cols = [
+        col for col in df if col.startswith("c_") or col == "visual_assessment_id"
+    ]
+    df = df.loc[:, filter_cols].fillna(0)
 
     for idx, row in df.iterrows():
 
-        de1 = str(row["c_joint_sealant_degree"]) + str(row["c_joint_sealant_extent"])
-        de2 = str(row["c_undulation_settlement_degree"]) + str(
-            row["c_undulation_settlement_extent"]
-        )
-        de3 = str(row["c_joint_associated_cracks_degree"]) + str(
-            row["c_joint_associated_cracks_extent"]
-        )
-        de4 = str(row["c_spalled_joints_degree"]) + str(row["c_spalled_joints_extent"])
-        de5 = str(row["c_cracks_random_degree"]) + str(row["c_cracks_random_extent"])
-        de6 = str(row["c_cracks_longitudinal_degree"]) + str(
-            row["c_cracks_longitudinal_extent"]
-        )
-        de7 = str(row["c_cracks_transverse_degree"]) + str(
-            row["c_cracks_transverse_extent"]
-        )
-        de8 = str(row["c_corner_breaks_degree"]) + str(row["c_corner_breaks_extent"])
-        de9 = str(row["c_cracks_cluster_degree"]) + str(row["c_cracks_cluster_extent"])
-        de10 = str(row["c_cracked_slabs_degree"]) + str(row["c_cracked_slabs_extent"])
-        de11 = str(row["c_shattered_slabs_degree"]) + str(
-            row["c_shattered_slabs_extent"]
-        )
+        if (
+            str(row["c_joint_sealant_degree"]) == "0"
+            or str(row["c_joint_sealant_extent"]) == "0"
+        ):
+            de1 = "00"
+        else:
+            de1 = str(row["c_joint_sealant_degree"]) + str(
+                row["c_joint_sealant_extent"]
+            )
 
-        de12 = str(row["c_faulting_degree"]) + str(row["c_faulting_extent"])
-        de13 = str(row["c_failures_degree"]) + str(row["c_failures_extent"])
-        de14 = str(row["c_patching_degree"]) + str(row["c_patching_extent"])
-        de15 = str(row["c_punchouts_degree"]) + str(row["c_punchouts_extent"])
-        de16 = str(row["c_pumping_degree"]) + str(row["c_pumping_extent"])
+        if (
+            str(row["c_undulation_settlement_degree"]) == "0"
+            or str(row["c_undulation_settlement_extent"]) == "0"
+        ):
+            de2 = "00"
+        else:
+            de2 = str(row["c_undulation_settlement_degree"]) + str(
+                row["c_undulation_settlement_extent"]
+            )
 
-        de17 = str(row["c_riding_quality"] * 10)
-        de18 = str(row["c_skid_resistance"] * 10)
-        de19 = str(row["c_shoulders_unpaved"] * 10)
-        de20 = str(row["c_shoulders_paved"] * 10)
+        if (
+            str(row["c_joint_associated_cracks_degree"]) == "0"
+            or str(row["c_joint_associated_cracks_extent"]) == "0"
+        ):
+            de3 = "00"
+        else:
+            de3 = str(row["c_joint_associated_cracks_degree"]) + str(
+                row["c_joint_associated_cracks_extent"]
+            )
+
+        if (
+            str(row["c_spalled_joints_degree"]) == "0"
+            or str(row["c_spalled_joints_extent"]) == "0"
+        ):
+            de4 = "00"
+        else:
+            de4 = str(row["c_spalled_joints_degree"]) + str(
+                row["c_spalled_joints_extent"]
+            )
+
+        if (
+            str(row["c_cracks_random_degree"]) == "0"
+            or str(row["c_cracks_random_extent"]) == "0"
+        ):
+            de5 = "00"
+        else:
+            de5 = str(row["c_cracks_random_degree"]) + str(
+                row["c_cracks_random_extent"]
+            )
+
+        if (
+            str(row["c_cracks_longitudinal_degree"]) == "0"
+            or str(row["c_cracks_longitudinal_extent"]) == "0"
+        ):
+            de6 = "00"
+        else:
+            de6 = str(row["c_cracks_longitudinal_degree"]) + str(
+                row["c_cracks_longitudinal_extent"]
+            )
+
+        if (
+            str(row["c_cracks_transverse_degree"]) == "0"
+            or str(row["c_cracks_transverse_extent"]) == "0"
+        ):
+            de7 = "00"
+        else:
+            de7 = str(row["c_cracks_transverse_degree"]) + str(
+                row["c_cracks_transverse_extent"]
+            )
+
+        if (
+            str(row["c_corner_breaks_degree"]) == "0"
+            or str(row["c_corner_breaks_extent"]) == "0"
+        ):
+            de8 = "00"
+        else:
+            de8 = str(row["c_corner_breaks_degree"]) + str(
+                row["c_corner_breaks_extent"]
+            )
+
+        if (
+            str(row["c_cracks_cluster_degree"]) == "0"
+            or str(row["c_cracks_cluster_extent"]) == "0"
+        ):
+            de9 = "00"
+        else:
+            de9 = str(row["c_cracks_cluster_degree"]) + str(
+                row["c_cracks_cluster_extent"]
+            )
+
+        if (
+            str(row["c_cracked_slabs_degree"]) == "0"
+            or str(row["c_cracked_slabs_extent"]) == "0"
+        ):
+            de10 = "00"
+        else:
+            de10 = str(row["c_cracked_slabs_degree"]) + str(
+                row["c_cracked_slabs_extent"]
+            )
+
+        if (
+            str(row["c_shattered_slabs_degree"]) == "0"
+            or str(row["f_surface_failure_extent"]) == "0"
+        ):
+            de11 = "00"
+        else:
+            de11 = str(row["c_shattered_slabs_degree"]) + str(
+                row["c_shattered_slabs_extent"]
+            )
+
+        if str(row["c_faulting_degree"]) == "0" or str(row["c_faulting_extent"]) == "0":
+            de12 = "00"
+        else:
+            de12 = str(row["c_faulting_degree"]) + str(row["c_faulting_extent"])
+
+        if str(row["c_failures_degree"]) == "0" or str(row["c_failures_extent"]) == "0":
+            de13 = "00"
+        else:
+            de13 = str(row["c_failures_degree"]) + str(row["c_failures_extent"])
+
+        if str(row["c_patching_degree"]) == "0" or str(row["c_patching_extent"]) == "0":
+            de14 = "00"
+        else:
+            de14 = str(row["c_patching_degree"]) + str(row["c_patching_extent"])
+
+        if (
+            str(row["c_punchouts_degree"]) == "0"
+            or str(row["c_punchouts_extent"]) == "0"
+        ):
+            de15 = "00"
+        else:
+            de15 = str(row["c_punchouts_degree"]) + str(row["c_punchouts_extent"])
+
+        if (
+            str(row["f_surface_failure_degree"]) == "0"
+            or str(row["c_pumping_extent"]) == "0"
+        ):
+            de16 = "00"
+        else:
+            de16 = str(row["c_pumping_degree"]) + str(row["c_pumping_extent"])
+
+        d17 = str(row["c_riding_quality"] * 10)
+        d18 = str(row["c_skid_resistance"] * 10)
+        d19 = str(row["c_shoulders_unpaved"] * 10)
+        d20 = str(row["c_shoulders_paved"] * 10)
+
+        if d17[:1] == "1":
+            e17 = "1"
+        elif d17[1:2] == "0" or d17[1:2] is None:
+            e17 = "1"
+        elif len(d17) == 1:
+            e17 = "0"
+        else:
+            e17 = d17[1:2]
+
+        if d18[:1] == "1":
+            e18 = "1"
+        elif d18[1:2] == "0" or d83[1:2] is None:
+            e18 = "1"
+        elif len(d18) == 1:
+            e18 = "0"
+        else:
+            e18 = d18[1:2]
+
+        if d19[:1] == "1":
+            e19 = "1"
+        elif d19[1:2] == "0" or d19[1:2] is None:
+            e19 = "1"
+        elif len(d19) == 1:
+            e19 = "0"
+        else:
+            e19 = d19[1:2]
+
+        if d20[:1] == "1":
+            e20 = "1"
+        elif d20[1:2] == "0" or d20[1:2] is None:
+            e20 = "1"
+        elif len(d20) == 1:
+            e20 = "0"
+        else:
+            e20 = d20[1:2]
+
+        de17 = d17[:1] + e17
+        de18 = d18[:1] + e18
+        de19 = d19[:1] + e19
+        de20 = d20[:1] + e20
 
         de1 = list(df2.loc[df2["de"] == str(de1)]["joint_sealant"])[0]
         de2 = list(df2.loc[df2["de"] == str(de2)]["concrete_durability"])[0]
@@ -349,15 +619,20 @@ def deduct_conc_calc(df, df2):
             - 0.05 * sorted_list[5]
         )
 
-        df["index"] = index
+        df.at[idx, "index"] = index
+
+    df.drop(
+        df.columns.difference(["visual_assessment_id", "index"]), axis=1, inplace=True
+    )
 
     return df
 
 
 def deduct_unpaved_calc(df, df2):
-    filter_cols = [col for col in df if col.startswith("u_")]
-    filter_cols = filter_cols.append("assessment_id")
-    df = df.loc[:, df[filter_cols]]
+    filter_cols = [
+        col for col in df if col.startswith("u_") or col == "visual_assessment_id"
+    ]
+    df = df.loc[:, filter_cols].fillna(0)
 
     for idx, row in df.iterrows():
 
@@ -373,30 +648,153 @@ def deduct_unpaved_calc(df, df2):
 
         de1 = str(row["u_material_quality"]) + str(e1)
         de2 = str(row["u_material_quantity"]) + str(e2)
-        de3 = str(row["u_potholes_degree"]) + str(row["u_potholes_extent"])
-        de4 = str(row["u_corrugations_degree"]) + str(row["u_corrugations_extent"])
-        de5 = str(row["u_rutting_degree"]) + str(row["u_rutting_extent"])
-        de6 = str(row["u_loosematerial_degree"]) + str(row["u_loosematerial_extent"])
-        de7 = str(row["u_stoniness_fixed_degree"]) + str(
-            row["u_stoniness_fixed_extent"]
-        )
-        de8 = str(row["u_stoniness_loose_degree"]) + str(
-            row["u_stoniness_loose_extent"]
-        )
-        de9 = str(row["u_erosion_longitudinal_degree"]) + str(
-            row["u_erosion_longitudinal_extent"]
-        )
-        de10 = str(row["u_erosion_transverse_degree"]) + str(
-            row["u_erosion_transverse_extent"]
-        )
 
-        de11 = str(row["u_roughness"] * 10)
-        de12 = str(row["u_transverse_profile"] * 10)
-        de13 = str(row["u_transverse_profile"] * 10)
-        de14 = str(row["u_trafficability"] * 10)
-        de15 = str(row["u_safety"] * 10)
-        de16 = str(row["u_drainage_road"] * 10)
-        de17 = str(row["u_drainage_roadside"] * 10)
+        if str(row["u_potholes_degree"]) == "0" or str(row["u_potholes_extent"]) == "0":
+            de3 = "00"
+        else:
+            de3 = str(row["u_potholes_degree"]) + str(row["u_potholes_extent"])
+
+        if (
+            str(row["u_corrugations_degree"]) == "0"
+            or str(row["u_corrugations_extent"]) == "0"
+        ):
+            de4 = "00"
+        else:
+            de4 = str(row["u_corrugations_degree"]) + str(row["u_corrugations_extent"])
+
+        if str(row["u_rutting_degree"]) == "0" or str(row["u_rutting_extent"]) == "0":
+            de15 = "00"
+        else:
+            de5 = str(row["u_rutting_degree"]) + str(row["u_rutting_extent"])
+
+        if (
+            str(row["u_loosematerial_degree"]) == "0"
+            or str(row["u_loosematerial_extent"]) == "0"
+        ):
+            de6 = "00"
+        else:
+            de6 = str(row["u_loosematerial_degree"]) + str(
+                row["u_loosematerial_extent"]
+            )
+
+        if (
+            str(row["u_stoniness_fixed_degree"]) == "0"
+            or str(row["u_stoniness_fixed_extent"]) == "0"
+        ):
+            de7 = "00"
+        else:
+            de7 = str(row["u_stoniness_fixed_degree"]) + str(
+                row["u_stoniness_fixed_extent"]
+            )
+
+        if (
+            str(row["u_stoniness_loose_degree"]) == "0"
+            or str(row["u_stoniness_loose_extent"]) == "0"
+        ):
+            de8 = "00"
+        else:
+            de8 = str(row["u_stoniness_loose_degree"]) + str(
+                row["u_stoniness_loose_extent"]
+            )
+
+        if (
+            str(row["u_erosion_longitudinal_degree"]) == "0"
+            or str(row["u_erosion_longitudinal_extent"]) == "0"
+        ):
+            de9 = "00"
+        else:
+            de9 = str(row["u_erosion_longitudinal_degree"]) + str(
+                row["u_erosion_longitudinal_extent"]
+            )
+
+        if (
+            str(row["u_erosion_transverse_degree"]) == "0"
+            or str(row["u_erosion_transverse_extent"]) == "0"
+        ):
+            de10 = "00"
+        else:
+            de10 = str(row["u_erosion_transverse_degree"]) + str(
+                row["u_erosion_transverse_extent"]
+            )
+
+        d11 = str(row["u_roughness"] * 10)
+        d12 = str(row["u_transverse_profile"] * 10)
+        d13 = str(row["u_transverse_profile"] * 10)
+        d14 = str(row["u_trafficability"] * 10)
+        d15 = str(row["u_safety"] * 10)
+        d16 = str(row["u_drainage_road"] * 10)
+        d17 = str(row["u_drainage_roadside"] * 10)
+
+        if d11[:1] == "1":
+            e11 = "1"
+        elif d11[1:2] == "0" or d11[1:2] is None:
+            e11 = "1"
+        elif len(d11) == 1:
+            e11 = "0"
+        else:
+            e11 = d11[1:2]
+
+        if d12[:1] == "1":
+            e12 = "1"
+        elif d12[1:2] == "0" or d12[1:2] is None:
+            e12 = "1"
+        elif len(d12) == 1:
+            e12 = "0"
+        else:
+            e12 = d12[1:2]
+
+        if d13[:1] == "1":
+            e13 = "1"
+        elif d13[1:2] == "0" or d13[1:2] is None:
+            e13 = "1"
+        elif len(d13) == 1:
+            e13 = "0"
+        else:
+            e13 = d13[1:2]
+
+        if d14[:1] == "1":
+            e14 = "1"
+        elif d14[1:2] == "0" or d14[1:2] is None:
+            e14 = "1"
+        elif len(d14) == 1:
+            e14 = "0"
+        else:
+            e14 = d14[1:2]
+
+        if d15[:1] == "1":
+            e15 = "1"
+        elif d15[1:2] == "0" or d15[1:2] is None:
+            e15 = "1"
+        elif len(d15) == 1:
+            e15 = "0"
+        else:
+            e15 = d15[1:2]
+
+        if d16[:1] == "1":
+            e16 = "1"
+        elif d16[1:2] == "0":
+            e16 = "1"
+        elif len(d16) == 1:
+            e16 = "0"
+        else:
+            e16 = d16[1:2]
+
+        if d17[:1] == "1":
+            e17 = "1"
+        elif d17[1:2] == "0":
+            e17 = "1"
+        elif len(d17) == 1:
+            e17 = "0"
+        else:
+            e17 = d17[1:2]
+
+        de11 = d11[:1] + e11
+        de12 = d12[:1] + e12
+        de13 = d13[:1] + e13
+        de14 = d14[:1] + e14
+        de15 = d15[:1] + e15
+        de16 = d16[:1] + e16
+        de17 = d17[:1] + e17
 
         de1 = list(df2.loc[df2["de"] == str(de1)]["unpaved_gravel_quality"])[0]
         de2 = list(df2.loc[df2["de"] == str(de2)]["gravel_thickness"])[0]
@@ -450,57 +848,216 @@ def deduct_unpaved_calc(df, df2):
             - 0.05 * sorted_list[5]
         )
 
-        df["index"] = index
+        df.at[idx, "index"] = index
+
+    df.drop(
+        df.columns.difference(["visual_assessment_id", "index"]), axis=1, inplace=True
+    )
 
     return df
 
 
 def deduct_flex_calc(df, df2):
-    filter_cols = [col for col in df if col.startswith("f_")]
-    filter_cols = filter_cols.append("assessment_id")
-    df = df.loc[:, df[filter_cols]]
+    filter_cols = [
+        col for col in df if col.startswith("f_") or col == "visual_assessment_id"
+    ]
+    df = df.loc[:, filter_cols].fillna(0)
+    df["index"] = 0
 
     for idx, row in df.iterrows():
 
-        de1 = str(row["f_surface_failure_degree"]) + str(
-            row["f_surface_failure_extent"]
-        )
-        de2 = str(row["f_surface_cracking_degree"]) + str(
-            row["f_surface_cracking_extent"]
-        )
         sla = str(row["f_stone_loss_active"])
-        de3 = str(row["f_stone_loss_degree"]) + str(row["f_stone_loss_extent"])
-        de4 = str(row["f_surface_patching_degree"]) + str(
-            row["f_surface_patching_extent"]
-        )
-        de5 = str(row["f_binder_condition_degree"]) + str(
-            row["f_binder_condition_extent"]
-        )
-        de6 = str(row["f_bleeding_degree"]) + str(row["f_bleeding_extent"])
-        de7 = str(row["f_block_cracks_degree"]) + str(row["f_block_cracks_extent"])
-        de8 = str(row["f_longitudinal_cracks_degree"]) + str(
-            row["f_longitudinal_cracks_extent"]
-        )
-        de9 = str(row["f_transverse_cracks_degree"]) + str(
-            row["f_transverse_cracks_extent"]
-        )
-        de10 = str(row["f_crocodile_cracks_degree"]) + str(
-            row["f_crocodile_cracks_extent"]
-        )
 
-        de11 = str(row["f_pumping_degree"]) + str(row["f_pumping_extent"])
-        de12 = str(row["f_rutting_degree"]) + str(row["f_rutting_extent"])
-        de13 = str(row["f_shoving_degree"]) + str(row["f_shoving_extent"])
-        de14 = str(row["f_undulation_degree"]) + str(row["f_undulation_extent"])
-        de15 = str(row["f_patching_degree"]) + str(row["f_patching_extent"])
-        de16 = str(row["f_failures_degree"]) + str(row["f_failures_extent"])
-        de17 = str(row["f_edge_breaking_degree"]) + str(row["f_edge_breaking_extent"])
+        if (
+            str(row["f_surface_failure_degree"]) == "0"
+            or str(row["f_surface_failure_extent"]) == "0"
+        ):
+            de1 = "00"
+        else:
+            de1 = str(row["f_surface_failure_degree"]) + str(
+                row["f_surface_failure_extent"]
+            )
 
-        de18 = str(row["f_riding_quality"] * 10)
-        de19 = str(row["f_skid_resistance"] * 10)
-        de20 = str(row["f_surface_drainage"] * 10)
-        de21 = str(row["f_shoulders_unpaved"] * 10)
-        de22 = str(row["f_shoulders_paved"] * 10)
+        if (
+            str(row["f_surface_cracking_degree"]) == "0"
+            or str(row["f_surface_cracking_extent"]) == "0"
+        ):
+            de2 = "00"
+        else:
+            de2 = str(row["f_surface_cracking_degree"]) + str(
+                row["f_surface_cracking_extent"]
+            )
+
+        if (
+            str(row["f_stone_loss_degree"]) == "0"
+            or str(row["f_stone_loss_extent"]) == "0"
+        ):
+            de3 = "00"
+        else:
+            de3 = str(row["f_stone_loss_degree"]) + str(row["f_stone_loss_extent"])
+
+        if (
+            str(row["f_surface_patching_degree"]) == "0"
+            or str(row["f_surface_patching_extent"]) == "0"
+        ):
+            de4 = "00"
+        else:
+            de4 = str(row["f_surface_patching_degree"]) + str(
+                row["f_surface_patching_extent"]
+            )
+
+        if (
+            str(row["f_binder_condition_degree"]) == "0"
+            or str(row["f_binder_condition_extent"]) == "0"
+        ):
+            de5 = "00"
+        else:
+            de5 = str(row["f_binder_condition_degree"]) + str(
+                row["f_binder_condition_extent"]
+            )
+
+        if str(row["f_bleeding_degree"]) == "0" or str(row["f_bleeding_extent"]) == "0":
+            de6 = "00"
+        else:
+            de6 = str(row["f_bleeding_degree"]) + str(row["f_bleeding_extent"])
+
+        if (
+            str(row["f_block_cracks_degree"]) == "0"
+            or str(row["f_block_cracks_extent"]) == "0"
+        ):
+            de7 = "00"
+        else:
+            de7 = str(row["f_block_cracks_degree"]) + str(row["f_block_cracks_extent"])
+
+        if (
+            str(row["f_longitudinal_cracks_degree"]) == "0"
+            or str(row["f_longitudinal_cracks_extent"]) == "0"
+        ):
+            de8 = "00"
+        else:
+            de8 = str(row["f_longitudinal_cracks_degree"]) + str(
+                row["f_longitudinal_cracks_extent"]
+            )
+
+        if (
+            str(row["f_transverse_cracks_degree"]) == "0"
+            or str(row["f_transverse_cracks_extent"]) == "0"
+        ):
+            de9 = "00"
+        else:
+            de9 = str(row["f_transverse_cracks_degree"]) + str(
+                row["f_transverse_cracks_extent"]
+            )
+
+        if (
+            str(row["f_crocodile_cracks_degree"]) == "0"
+            or str(row["f_crocodile_cracks_extent"]) == "0"
+        ):
+            de10 = "00"
+        else:
+            de10 = str(row["f_crocodile_cracks_degree"]) + str(
+                row["f_crocodile_cracks_extent"]
+            )
+
+        if str(row["f_pumping_degree"]) == "0" or str(row["f_pumping_extent"]) == "0":
+            de11 = "00"
+        else:
+            de11 = str(row["f_pumping_degree"]) + str(row["f_pumping_extent"])
+
+        if str(row["f_rutting_degree"]) == "0" or str(row["f_rutting_extent"]) == "0":
+            de12 = "00"
+        else:
+            de12 = str(row["f_rutting_degree"]) + str(row["f_rutting_extent"])
+
+        if str(row["f_shoving_degree"]) == "0" or str(row["f_shoving_extent"]) == "0":
+            de13 = "00"
+        else:
+            de13 = str(row["f_shoving_degree"]) + str(row["f_shoving_extent"])
+
+        if (
+            str(row["f_undulation_degree"]) == "0"
+            or str(row["f_undulation_extent"]) == "0"
+        ):
+            de14 = "00"
+        else:
+            de14 = str(row["f_undulation_degree"]) + str(row["f_undulation_extent"])
+
+        if str(row["f_patching_degree"]) == "0" or str(row["f_patching_extent"]) == "0":
+            de15 = "00"
+        else:
+            de15 = str(row["f_patching_degree"]) + str(row["f_patching_extent"])
+
+        if str(row["f_failures_degree"]) == "0" or str(row["f_failures_extent"]) == "0":
+            de16 = "00"
+        else:
+            de16 = str(row["f_failures_degree"]) + str(row["f_failures_extent"])
+
+        if (
+            str(row["f_edge_breaking_degree"]) == "0"
+            or str(row["f_edge_breaking_extent"]) == "0"
+        ):
+            de17 = "00"
+        else:
+            de17 = str(row["f_edge_breaking_degree"]) + str(
+                row["f_edge_breaking_extent"]
+            )
+
+        d18 = str(row["f_riding_quality"] * 10)
+        d19 = str(row["f_skid_resistance"] * 10)
+        d20 = str(row["f_surface_drainage"] * 10)
+        d21 = str(row["f_shoulders_unpaved"] * 10)
+        d22 = str(row["f_shoulders_paved"] * 10)
+
+        if d18[:1] == "1":
+            e18 = "1"
+        elif d18[1:2] == "0" or d18[1:2] is None:
+            e18 = "1"
+        elif len(d18) == 1:
+            e18 = "0"
+        else:
+            e18 = d18[1:2]
+
+        if d19[:1] == "1":
+            e19 = "1"
+        elif d19[1:2] == "0" or d19[1:2] is None:
+            e19 = "1"
+        elif len(d19) == 1:
+            e19 = "0"
+        else:
+            e19 = d19[1:2]
+
+        if d20[:1] == "1":
+            e20 = "1"
+        elif d20[1:2] == "0" or d20[1:2] is None:
+            e20 = "1"
+        elif len(d20) == 1:
+            e20 = "0"
+        else:
+            e20 = d20[1:2]
+
+        if d21[:1] == "1":
+            e21 = "1"
+        elif d21[1:2] == "0" or d21[1:2] is None:
+            e21 = "1"
+        elif len(d21) == 1:
+            e21 = "0"
+        else:
+            e21 = d21[1:2]
+
+        if d22[:1] == "1":
+            e22 = "1"
+        elif d22[1:2] == "0":
+            e22 = "1"
+        elif len(d22) == 1:
+            e22 = "0"
+        else:
+            e22 = d22[1:2]
+
+        de18 = d18[:1] + e18
+        de19 = d19[:1] + e19
+        de20 = d20[:1] + e20
+        de21 = d21[:1] + e21
+        de22 = d22[:1] + e22
 
         de1 = list(df2.loc[df2["de"] == str(de1)]["surface_failure"])[0]
         de2 = list(df2.loc[df2["de"] == str(de2)]["surface_cracking"])[0]
@@ -567,21 +1124,35 @@ def deduct_flex_calc(df, df2):
             - 0.05 * sorted_list[5]
         )
 
-        df["index"] = index
+        df.at[idx, "index"] = index
+
+    df.drop(
+        df.columns.difference(["visual_assessment_id", "index"]), axis=1, inplace=True
+    )
 
     return df
 
 
-def vci_deduct_calc(df, df2):
-    filter_cols = [col for col in df if col.startswith("f_")]
-    filter_cols = filter_cols.append("assessment_id")
-    df = df.loc[:, df[filter_cols]].fillna(0)
+# ###########################################
+# ###########################################
 
-    df2["dem"] = df2["d_max"] * df2["e_max"] ^ df2["y"] * df2["weight"] * df2["small_n"]
+
+def vci_deduct_calc(df, df2):
+    filter_cols = [
+        col for col in df if col.startswith("f_") or col == "visual_assessment_id"
+    ]
+    df = df.loc[:, filter_cols].fillna(0)
+    df["index"] = 0
+
+    dem_dict = {}
+    for idx, row in df2.iterrows():
+        dem_dict["dem" + row["id"]] = (
+            row["d_max"] * row["e_max"] ** row["y"] * row["weight"] * row["small_n"]
+        )
 
     for idx, row in df.iterrows():
 
-        sla = df["f_stone_loss_active"]
+        sla = row["f_stone_loss_active"]
 
         d1 = row["f_surface_patching_degree"]
         e1 = row["f_surface_patching_extent"]
@@ -628,33 +1199,256 @@ def vci_deduct_calc(df, df2):
         d22 = row["f_shoulders_paved"]
         e22 = 3
 
-        degree_list = [
-            "f_surface_patching_degree",
-            "f_surface_failure_degree",
-            "f_surface_cracking_degree",
-            "f_stone_loss_degree",
-            "f_stone_loss_degree",
-        ]
+        if sla == "A":
+            sigma_dem = sum(dem_dict.values()) - dem_dict.get("dem5N")
+            sigma_de = (
+                d1
+                * e1 ** list(df2.loc[df2["id"] == "2"]["y"])[0]
+                * list(df2.loc[df2["id"] == "2"]["weight"])[0]
+                * list(df2.loc[df2["id"] == "2"]["small_n"])[0]
+                + d2
+                * e2 ** list(df2.loc[df2["id"] == "3"]["y"])[0]
+                * list(df2.loc[df2["id"] == "3"]["weight"])[0]
+                * list(df2.loc[df2["id"] == "3"]["small_n"])[0]
+                + d3
+                * e3 ** list(df2.loc[df2["id"] == "4"]["y"])[0]
+                * list(df2.loc[df2["id"] == "4"]["weight"])[0]
+                * list(df2.loc[df2["id"] == "4"]["small_n"])[0]
+                + d4
+                * e4 ** list(df2.loc[df2["id"] == "5A"]["y"])[0]
+                * list(df2.loc[df2["id"] == "5A"]["weight"])[0]
+                * list(df2.loc[df2["id"] == "5A"]["small_n"])[0]
+                + d5
+                * e5 ** list(df2.loc[df2["id"] == "6"]["y"])[0]
+                * list(df2.loc[df2["id"] == "6"]["weight"])[0]
+                * list(df2.loc[df2["id"] == "6"]["small_n"])[0]
+                + d6
+                * e6 ** list(df2.loc[df2["id"] == "7"]["y"])[0]
+                * list(df2.loc[df2["id"] == "7"]["weight"])[0]
+                * list(df2.loc[df2["id"] == "7"]["small_n"])[0]
+                + d7
+                * e7 ** list(df2.loc[df2["id"] == "8"]["y"])[0]
+                * list(df2.loc[df2["id"] == "8"]["weight"])[0]
+                * list(df2.loc[df2["id"] == "8"]["small_n"])[0]
+                + d8
+                * e8 ** list(df2.loc[df2["id"] == "9"]["y"])[0]
+                * list(df2.loc[df2["id"] == "9"]["weight"])[0]
+                * list(df2.loc[df2["id"] == "9"]["small_n"])[0]
+                + d9
+                * e9 ** list(df2.loc[df2["id"] == "10"]["y"])[0]
+                * list(df2.loc[df2["id"] == "10"]["weight"])[0]
+                * list(df2.loc[df2["id"] == "10"]["small_n"])[0]
+                + d10
+                * e10 ** list(df2.loc[df2["id"] == "11"]["y"])[0]
+                * list(df2.loc[df2["id"] == "11"]["weight"])[0]
+                * list(df2.loc[df2["id"] == "11"]["small_n"])[0]
+                + d11
+                * e11 ** list(df2.loc[df2["id"] == "12"]["y"])[0]
+                * list(df2.loc[df2["id"] == "12"]["weight"])[0]
+                * list(df2.loc[df2["id"] == "12"]["small_n"])[0]
+                + d12
+                * e12 ** list(df2.loc[df2["id"] == "13"]["y"])[0]
+                * list(df2.loc[df2["id"] == "13"]["weight"])[0]
+                * list(df2.loc[df2["id"] == "13"]["small_n"])[0]
+                + d13
+                * e13 ** list(df2.loc[df2["id"] == "14"]["y"])[0]
+                * list(df2.loc[df2["id"] == "14"]["weight"])[0]
+                * list(df2.loc[df2["id"] == "14"]["small_n"])[0]
+                + d14
+                * e14 ** list(df2.loc[df2["id"] == "15"]["y"])[0]
+                * list(df2.loc[df2["id"] == "15"]["weight"])[0]
+                * list(df2.loc[df2["id"] == "15"]["small_n"])[0]
+                + d15
+                * e15 ** list(df2.loc[df2["id"] == "16"]["y"])[0]
+                * list(df2.loc[df2["id"] == "16"]["weight"])[0]
+                * list(df2.loc[df2["id"] == "16"]["small_n"])[0]
+                + d16
+                * e16 ** list(df2.loc[df2["id"] == "17"]["y"])[0]
+                * list(df2.loc[df2["id"] == "17"]["weight"])[0]
+                * list(df2.loc[df2["id"] == "17"]["small_n"])[0]
+                + d17
+                * e17 ** list(df2.loc[df2["id"] == "18"]["y"])[0]
+                * list(df2.loc[df2["id"] == "18"]["weight"])[0]
+                * list(df2.loc[df2["id"] == "18"]["small_n"])[0]
+                + d18
+                * e18 ** list(df2.loc[df2["id"] == "19"]["y"])[0]
+                * list(df2.loc[df2["id"] == "19"]["weight"])[0]
+                * list(df2.loc[df2["id"] == "19"]["small_n"])[0]
+                + d19
+                * e19 ** list(df2.loc[df2["id"] == "20"]["y"])[0]
+                * list(df2.loc[df2["id"] == "20"]["weight"])[0]
+                * list(df2.loc[df2["id"] == "20"]["small_n"])[0]
+                + d20
+                * e20 ** list(df2.loc[df2["id"] == "21"]["y"])[0]
+                * list(df2.loc[df2["id"] == "21"]["weight"])[0]
+                * list(df2.loc[df2["id"] == "21"]["small_n"])[0]
+                + d21
+                * e21 ** list(df2.loc[df2["id"] == "22"]["y"])[0]
+                * list(df2.loc[df2["id"] == "22"]["weight"])[0]
+                * list(df2.loc[df2["id"] == "22"]["small_n"])[0]
+                + d22
+                * e22 ** list(df2.loc[df2["id"] == "23"]["y"])[0]
+                * list(df2.loc[df2["id"] == "23"]["weight"])[0]
+                * list(df2.loc[df2["id"] == "23"]["small_n"])[0]
+            )
+        else:
+            sigma_dem = sum(dem_dict.values()) - dem_dict.get("dem5A")
+            sigma_de = (
+                d1
+                * e1 ** list(df2.loc[df2["id"] == "2"]["y"])[0]
+                * list(df2.loc[df2["id"] == "2"]["weight"])[0]
+                * list(df2.loc[df2["id"] == "2"]["small_n"])[0]
+                + d2
+                * e2 ** list(df2.loc[df2["id"] == "3"]["y"])[0]
+                * list(df2.loc[df2["id"] == "3"]["weight"])[0]
+                * list(df2.loc[df2["id"] == "3"]["small_n"])[0]
+                + d3
+                * e3 ** list(df2.loc[df2["id"] == "4"]["y"])[0]
+                * list(df2.loc[df2["id"] == "4"]["weight"])[0]
+                * list(df2.loc[df2["id"] == "4"]["small_n"])[0]
+                + d4
+                * e4 ** list(df2.loc[df2["id"] == "5N"]["y"])[0]
+                * list(df2.loc[df2["id"] == "5N"]["weight"])[0]
+                * list(df2.loc[df2["id"] == "5N"]["small_n"])[0]
+                + d5
+                * e5 ** list(df2.loc[df2["id"] == "6"]["y"])[0]
+                * list(df2.loc[df2["id"] == "6"]["weight"])[0]
+                * list(df2.loc[df2["id"] == "6"]["small_n"])[0]
+                + d6
+                * e6 ** list(df2.loc[df2["id"] == "7"]["y"])[0]
+                * list(df2.loc[df2["id"] == "7"]["weight"])[0]
+                * list(df2.loc[df2["id"] == "7"]["small_n"])[0]
+                + d7
+                * e7 ** list(df2.loc[df2["id"] == "8"]["y"])[0]
+                * list(df2.loc[df2["id"] == "8"]["weight"])[0]
+                * list(df2.loc[df2["id"] == "8"]["small_n"])[0]
+                + d8
+                * e8 ** list(df2.loc[df2["id"] == "9"]["y"])[0]
+                * list(df2.loc[df2["id"] == "9"]["weight"])[0]
+                * list(df2.loc[df2["id"] == "9"]["small_n"])[0]
+                + d9
+                * e9 ** list(df2.loc[df2["id"] == "10"]["y"])[0]
+                * list(df2.loc[df2["id"] == "10"]["weight"])[0]
+                * list(df2.loc[df2["id"] == "10"]["small_n"])[0]
+                + d10
+                * e10 ** list(df2.loc[df2["id"] == "11"]["y"])[0]
+                * list(df2.loc[df2["id"] == "11"]["weight"])[0]
+                * list(df2.loc[df2["id"] == "11"]["small_n"])[0]
+                + d11
+                * e11 ** list(df2.loc[df2["id"] == "12"]["y"])[0]
+                * list(df2.loc[df2["id"] == "12"]["weight"])[0]
+                * list(df2.loc[df2["id"] == "12"]["small_n"])[0]
+                + d12
+                * e12 ** list(df2.loc[df2["id"] == "13"]["y"])[0]
+                * list(df2.loc[df2["id"] == "13"]["weight"])[0]
+                * list(df2.loc[df2["id"] == "13"]["small_n"])[0]
+                + d13
+                * e13 ** list(df2.loc[df2["id"] == "14"]["y"])[0]
+                * list(df2.loc[df2["id"] == "14"]["weight"])[0]
+                * list(df2.loc[df2["id"] == "14"]["small_n"])[0]
+                + d14
+                * e14 ** list(df2.loc[df2["id"] == "15"]["y"])[0]
+                * list(df2.loc[df2["id"] == "15"]["weight"])[0]
+                * list(df2.loc[df2["id"] == "15"]["small_n"])[0]
+                + d15
+                * e15 ** list(df2.loc[df2["id"] == "16"]["y"])[0]
+                * list(df2.loc[df2["id"] == "16"]["weight"])[0]
+                * list(df2.loc[df2["id"] == "16"]["small_n"])[0]
+                + d16
+                * e16 ** list(df2.loc[df2["id"] == "17"]["y"])[0]
+                * list(df2.loc[df2["id"] == "17"]["weight"])[0]
+                * list(df2.loc[df2["id"] == "17"]["small_n"])[0]
+                + d17
+                * e17 ** list(df2.loc[df2["id"] == "18"]["y"])[0]
+                * list(df2.loc[df2["id"] == "18"]["weight"])[0]
+                * list(df2.loc[df2["id"] == "18"]["small_n"])[0]
+                + d18
+                * e18 ** list(df2.loc[df2["id"] == "19"]["y"])[0]
+                * list(df2.loc[df2["id"] == "19"]["weight"])[0]
+                * list(df2.loc[df2["id"] == "19"]["small_n"])[0]
+                + d19
+                * e19 ** list(df2.loc[df2["id"] == "20"]["y"])[0]
+                * list(df2.loc[df2["id"] == "20"]["weight"])[0]
+                * list(df2.loc[df2["id"] == "20"]["small_n"])[0]
+                + d20
+                * e20 ** list(df2.loc[df2["id"] == "21"]["y"])[0]
+                * list(df2.loc[df2["id"] == "21"]["weight"])[0]
+                * list(df2.loc[df2["id"] == "21"]["small_n"])[0]
+                + d21
+                * e21 ** list(df2.loc[df2["id"] == "22"]["y"])[0]
+                * list(df2.loc[df2["id"] == "22"]["weight"])[0]
+                * list(df2.loc[df2["id"] == "22"]["small_n"])[0]
+                + d22
+                * e22 ** list(df2.loc[df2["id"] == "23"]["y"])[0]
+                * list(df2.loc[df2["id"] == "23"]["weight"])[0]
+                * list(df2.loc[df2["id"] == "23"]["small_n"])[0]
+            )
 
-    if sla == "A":
-        sigma_dem = (
-            df2["dem"].sum(axis=1) - list(df2.loc[df2["id"] == '5N']["dem"])[0]
-        )
-        sigma_de = None
-    else:
-        sigma_dem = (
-            df2["dem"].sum(axis=1) - list(df2.loc[df2["id"] == "5A"]["dem"])[0]
-        )
-        sigma_de = None
+        index = 100 * (1 - sigma_de / sigma_dem)
+        index = (0.04 * index + 0.0006 * index ** 2) ** 2
+        index = round(index)
+
+        df.at[idx, "index"] = index
+
+    df.drop(
+        df.columns.difference(["visual_assessment_id", "index"]), axis=1, inplace=True
+    )
 
     return df
 
 
 def vgi_deduct_calc(df, df2):
-    filter_cols = [col for col in df if col.startswith("u_")]
-    filter_cols = filter_cols.append("assessment_id")
-    df = df.loc[:, df[filter_cols]]
+    filter_cols = [
+        col for col in df if col.startswith("u_") or col == "visual_assessment_id"
+    ]
+    df = df.loc[:, filter_cols].fillna(0)
 
+    return df
+
+
+def stci_merge(df, index_df):
+    df = pd.merge(
+        df,
+        index_df[["visual_assessment_id", "index"]],
+        on="visual_assessment_id",
+        how="left",
+    )
+    df["fci_deduct"] = df.apply(
+        lambda x: x["index"]
+        if x["index"] > 0 and x["fci_deduct"] == None
+        else x["fci_deduct"],
+        axis=1,
+    )
+    df["structural_condition_index_stci"] = df.apply(
+        lambda x: x["index"]
+        if x["index"] > 0 and x["structural_condition_index_stci"] == None
+        else x["structural_condition_index_stci"],
+        axis=1,
+    )
+    df.drop(["index"], axis=1, inplace=True)
+    return df
+
+
+def pci_merge(df, index_df):
+    df = pd.merge(
+        df,
+        index_df[["visual_assessment_id", "index"]],
+        on="visual_assessment_id",
+        how="left",
+    )
+    df["pci_deduct"] = df.apply(
+        lambda x: x["index"]
+        if x["index"] > 0 and x["pci_deduct"] == None
+        else x["pci_deduct"],
+        axis=1,
+    )
+    df["surface_condition_index_sci"] = df.apply(
+        lambda x: x["index"]
+        if x["index"] > 0 and x["surface_condition_index_sci"] == None
+        else x["surface_condition_index_sci"],
+        axis=1,
+    )
+    df.drop(["index"], axis=1, inplace=True)
     return df
 
 
@@ -666,9 +1460,104 @@ def main():
         except:
             pass
 
+    fci_flex_lookup_df = pd.read_sql_query(FCI_FLEX_LOOKUP_QRY, ENGINE)
     fci_block_lookup_df = pd.read_sql_query(FCI_BLOCK_LOOKUP_QRY, ENGINE)
+    fci_conc_lookup_df = pd.read_sql_query(FCI_CONC_LOOKUP_QRY, ENGINE)
+    fci_unpaved_lookup_df = pd.read_sql_query(FCI_UNPAVED_LOOKUP_QRY, ENGINE)
 
-    df = calculate_mni(df)
+    pci_flex_lookup_df = pd.read_sql_query(PCI_FLEX_LOOKUP_QRY, ENGINE)
+    pci_block_lookup_df = pd.read_sql_query(PCI_BLOCK_LOOKUP_QRY, ENGINE)
+    pci_conc_lookup_df = pd.read_sql_query(PCI_CONC_LOOKUP_QRY, ENGINE)
+
+    sci_flex_lookup_df = pd.read_sql_query(SCI_FLEX_LOOKUP_QRY, ENGINE)
+
+    sci_weights_lookup_df = pd.read_sql_query(SCI_WEIGHTS_QRY, ENGINE)
+    vci_weights_lookup_df = pd.read_sql_query(VCI_WEIGHTS_QRY, ENGINE)
+    vgi_weights_lookup_df = pd.read_sql_query(VGI_DEDUCT_QRY, ENGINE)
+
+    index_df = deduct_flex_calc(df, fci_flex_lookup_df)
+    df = stci_merge(df, index_df)
+
+    index_df = deduct_block_calc(df, fci_block_lookup_df)
+    df = stci_merge(df, index_df)
+
+    index_df = deduct_conc_calc(df, fci_conc_lookup_df)
+    df = stci_merge(df, index_df)
+
+    index_df = deduct_unpaved_calc(df, fci_unpaved_lookup_df)
+    df = stci_merge(df, index_df)
+
+    index_df = deduct_block_calc(df, pci_block_lookup_df)
+    df = pci_merge(df, index_df)
+
+    index_df = deduct_conc_calc(df, pci_conc_lookup_df)
+    df = pci_merge(df, index_df)
+
+    index_df = deduct_flex_calc(df, pci_flex_lookup_df)
+    df = pd.merge(
+        df,
+        index_df[["visual_assessment_id", "index"]],
+        on="visual_assessment_id",
+        how="left",
+    )
+    df["pci_deduct"] = df.apply(
+        lambda x: x["index"]
+        if x["index"] > 0 and x["pci_deduct"] == None
+        else x["pci_deduct"],
+        axis=1,
+    )
+    df.drop(["index"], axis=1, inplace=True)
+
+    index_df = deduct_flex_calc(df, sci_flex_lookup_df)
+    df = pd.merge(
+        df,
+        index_df[["visual_assessment_id", "index"]],
+        on="visual_assessment_id",
+        how="left",
+    )
+    df["surface_condition_index_sci"] = df.apply(
+        lambda x: x["index"]
+        if x["index"] > 0 and x["surface_condition_index_sci"] == None
+        else x["surface_condition_index_sci"],
+        axis=1,
+    )
+    df.drop(["index"], axis=1, inplace=True)
+
+    index_df = deduct_flex_calc(df, sci_weights_lookup_df)
+    df = pd.merge(
+        df,
+        index_df[["visual_assessment_id", "index"]],
+        on="visual_assessment_id",
+        how="left",
+    )
+    df["sci_deduct"] = df.apply(
+        lambda x: x["index"]
+        if x["index"] > 0 and x["sci_deduct"] == None
+        else x["sci_deduct"],
+        axis=1,
+    )
+    df.drop(["index"], axis=1, inplace=True)
+
+    index_df = calculate_mni(df)
+    df = pd.merge(
+        df,
+        index_df[["visual_assessment_id", "index"]],
+        on="visual_assessment_id",
+        how="left",
+    )
+    df["fci_deduct"] = df.apply(
+        lambda x: x["index"]
+        if x["index"] > 0 and x["fci_deduct"] == None
+        else x["fci_deduct"],
+        axis=1,
+    )
+    df["maintenance_need_index_mni"] = df.apply(
+        lambda x: x["index"]
+        if x["index"] > 0 and x["maintenance_need_index_mni"] == None
+        else x["maintenance_need_index_mni"],
+        axis=1,
+    )
+    df.drop(["index"], axis=1, inplace=True)
 
 
 if __name__ == "__main__":
