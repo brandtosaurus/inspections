@@ -9,6 +9,9 @@ ENGINE = create_engine(
     "postgresql://postgres:$admin@localhost:5432/asset_management_master"
 )
 
+TABLE = "road_visual_assessment_main"
+SCHEMA = "assessment"
+
 QRY = """SELECT * FROM assessment.road_visual_assessment rva WHERE rva.visual_condition_index_vci IS NULL 
 		AND rva.visual_gravel_index_vgi IS NULL AND rva.structural_condition_index_stci IS null"""
 ASSETS_QRY = """SELECT * FROM infrastructure.asset where asset_type_id = 2"""
@@ -62,6 +65,7 @@ def psql_insert_copy(table, conn, keys, data_iter):
 
 
 def calculate_mni(df):
+    df["index"] = None
     assets = gpd.GeoDataFrame.from_postgis(ASSETS_QRY, ENGINE, geom_col="geom")
     risfsa = pd.read_sql_query(RISFSA_QRY, ENGINE)
     rainfall = gpd.GeoDataFrame.from_postgis(RAINFALL_QRY, ENGINE, geom_col="geom")
@@ -172,6 +176,7 @@ def deduct_block_calc(df, df2):
         col for col in df if col.startswith("b_") or col == "visual_assessment_id"
     ]
     df = df.loc[:, filter_cols].fillna(0)
+    df["index"] = None
 
     for idx, row in df.iterrows():
         if str(row["b_cracking_degree"]) == "0" or str(row["b_cracking_extent"]) == "0":
@@ -372,6 +377,7 @@ def deduct_conc_calc(df, df2):
         col for col in df if col.startswith("c_") or col == "visual_assessment_id"
     ]
     df = df.loc[:, filter_cols].fillna(0)
+    df["index"] = None
 
     for idx, row in df.iterrows():
 
@@ -633,6 +639,7 @@ def deduct_unpaved_calc(df, df2):
         col for col in df if col.startswith("u_") or col == "visual_assessment_id"
     ]
     df = df.loc[:, filter_cols].fillna(0)
+    df["index"] = None
 
     for idx, row in df.iterrows():
 
@@ -862,7 +869,7 @@ def deduct_flex_calc(df, df2):
         col for col in df if col.startswith("f_") or col == "visual_assessment_id"
     ]
     df = df.loc[:, filter_cols].fillna(0)
-    df["index"] = 0
+    df["index"] = None
 
     for idx, row in df.iterrows():
 
@@ -1137,18 +1144,14 @@ def deduct_flex_calc(df, df2):
 # ###########################################
 
 
-def vci_deduct_calc(df, df2):
+def vci_sci_calc(df, df2, dem_dict):
     filter_cols = [
         col for col in df if col.startswith("f_") or col == "visual_assessment_id"
     ]
     df = df.loc[:, filter_cols].fillna(0)
-    df["index"] = 0
+    df["index"] = None
 
-    dem_dict = {}
-    for idx, row in df2.iterrows():
-        dem_dict["dem" + row["id"]] = (
-            row["d_max"] * row["e_max"] ** row["y"] * row["weight"] * row["small_n"]
-        )
+    dem_dict = dem_dict
 
     for idx, row in df.iterrows():
 
@@ -1397,15 +1400,6 @@ def vci_deduct_calc(df, df2):
     return df
 
 
-def vgi_deduct_calc(df, df2):
-    filter_cols = [
-        col for col in df if col.startswith("u_") or col == "visual_assessment_id"
-    ]
-    df = df.loc[:, filter_cols].fillna(0)
-
-    return df
-
-
 def stci_merge(df, index_df):
     df = pd.merge(
         df,
@@ -1475,6 +1469,18 @@ def main():
     vci_weights_lookup_df = pd.read_sql_query(VCI_WEIGHTS_QRY, ENGINE)
     vgi_weights_lookup_df = pd.read_sql_query(VGI_DEDUCT_QRY, ENGINE)
 
+    vci_dem_dict = {}
+    for idx, row in vci_weights_lookup_df.iterrows():
+        vci_dem_dict["dem" + row["id"]] = (
+            row["d_max"] * row["e_max"] ** row["y"] * row["weight"] * row["small_n"]
+        )
+
+    sci_dem_dict = {}
+    for idx, row in sci_weights_lookup_df.iterrows():
+        sci_dem_dict["dem" + row["id"]] = (
+            row["d_max"] * row["e_max"] ** row["y"] * row["weight"] * row["small_n"]
+        )
+
     index_df = deduct_flex_calc(df, fci_flex_lookup_df)
     df = stci_merge(df, index_df)
 
@@ -1492,6 +1498,57 @@ def main():
 
     index_df = deduct_conc_calc(df, pci_conc_lookup_df)
     df = pci_merge(df, index_df)
+
+    index_df = deduct_unpaved_calc(df, vgi_weights_lookup_df)
+    df = pd.merge(
+        df,
+        index_df[["visual_assessment_id", "index"]],
+        on="visual_assessment_id",
+        how="left",
+    )
+    df["visual_condition_index_vci"] = df.apply(
+        lambda x: x["index"]
+        if x["index"] > 0 and x["visual_condition_index_vci"] == None
+        else x["visual_condition_index_vci"],
+        axis=1,
+    )
+    df["visual_gravel_index_vgi"] = df.apply(
+        lambda x: x["index"]
+        if x["index"] > 0 and x["visual_gravel_index_vgi"] == None
+        else x["visual_gravel_index_vgi"],
+        axis=1,
+    )
+    df.drop(["index"], axis=1, inplace=True)
+
+    index_df = vci_sci_calc(df, vci_weights_lookup_df, vci_dem_dict)
+    df = pd.merge(
+        df,
+        index_df[["visual_assessment_id", "index"]],
+        on="visual_assessment_id",
+        how="left",
+    )
+    df["visual_condition_index_vci"] = df.apply(
+        lambda x: x["index"]
+        if x["index"] > 0 and x["visual_condition_index_vci"] == None
+        else x["visual_condition_index_vci"],
+        axis=1,
+    )
+    df.drop(["index"], axis=1, inplace=True)
+
+    index_df = vci_sci_calc(df, sci_weights_lookup_df, sci_dem_dict)
+    df = pd.merge(
+        df,
+        index_df[["visual_assessment_id", "index"]],
+        on="visual_assessment_id",
+        how="left",
+    )
+    df["surface_condition_index_sci"] = df.apply(
+        lambda x: x["index"]
+        if x["index"] > 0 and x["surface_condition_index_sci"] == None
+        else x["surface_condition_index_sci"],
+        axis=1,
+    )
+    df.drop(["index"], axis=1, inplace=True)
 
     index_df = deduct_flex_calc(df, pci_flex_lookup_df)
     df = pd.merge(
@@ -1558,6 +1615,15 @@ def main():
         axis=1,
     )
     df.drop(["index"], axis=1, inplace=True)
+
+    df.to_sql(
+        TABLE,
+        ENGINE,
+        schema=SCHEMA,
+        if_exists="append",
+        index=False,
+        method=psql_insert_copy,
+    )
 
 
 if __name__ == "__main__":
