@@ -1,9 +1,6 @@
-from audioop import reverse
 import geopandas as gpd
 import pandas as pd
 from sqlalchemy import create_engine
-import pandasql
-from sympy import E1
 
 ENGINE = create_engine(
     "postgresql://postgres:$admin@localhost:5432/asset_management_master"
