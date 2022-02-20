@@ -480,7 +480,7 @@ def deduct_conc_calc(df, df2):
 
         if (
             str(row["c_shattered_slabs_degree"]) == "0"
-            or str(row["f_surface_failure_extent"]) == "0"
+            or str(row["c_shattered_slabs_extent"]) == "0"
         ):
             de11 = "00"
         else:
@@ -511,10 +511,7 @@ def deduct_conc_calc(df, df2):
         else:
             de15 = str(row["c_punchouts_degree"]) + str(row["c_punchouts_extent"])
 
-        if (
-            str(row["f_surface_failure_degree"]) == "0"
-            or str(row["c_pumping_extent"]) == "0"
-        ):
+        if str(row["c_pumping_degree"]) == "0" or str(row["c_pumping_extent"]) == "0":
             de16 = "00"
         else:
             de16 = str(row["c_pumping_degree"]) + str(row["c_pumping_extent"])
@@ -535,7 +532,7 @@ def deduct_conc_calc(df, df2):
 
         if d18[:1] == "1":
             e18 = "1"
-        elif d18[1:2] == "0" or d83[1:2] is None:
+        elif d18[1:2] == "0" or d18[1:2] is None:
             e18 = "1"
         elif len(d18) == 1:
             e18 = "0"
@@ -640,12 +637,12 @@ def deduct_unpaved_calc(df, df2):
 
     for idx, row in df.iterrows():
 
-        if row["u_material_quality"] == "0":
+        if str(row["u_material_quality"]) == "0":
             e1 = str("0")
         else:
             e1 = str("3")
 
-        if row["u_material_quality"] == "0":
+        if str(row["u_material_quality"]) == "0":
             e2 = str("0")
         else:
             e2 = str("3")
@@ -667,7 +664,7 @@ def deduct_unpaved_calc(df, df2):
             de4 = str(row["u_corrugations_degree"]) + str(row["u_corrugations_extent"])
 
         if str(row["u_rutting_degree"]) == "0" or str(row["u_rutting_extent"]) == "0":
-            de15 = "00"
+            de5 = "00"
         else:
             de5 = str(row["u_rutting_degree"]) + str(row["u_rutting_extent"])
 
