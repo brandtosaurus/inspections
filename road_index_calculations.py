@@ -797,8 +797,14 @@ def deduct_unpaved_calc(df, df2):
         de16 = d16[:1] + e16
         de17 = d17[:1] + e17
 
-        de1 = list(df2.loc[df2["de"] == str(de1)]["unpaved_gravel_quality"])[0]
-        de2 = list(df2.loc[df2["de"] == str(de2)]["gravel_thickness"])[0]
+        try:
+            de1 = list(df2.loc[df2["de"] == str(de1)]["unpaved_gravel_quality"])[0]
+        except:
+            de1 = list(df2.loc[df2["de"] == str("00")]["unpaved_gravel_quality"])[0]
+        try:
+            de2 = list(df2.loc[df2["de"] == str(de2)]["gravel_thickness"])[0]
+        except:
+            de2 = list(df2.loc[df2["de"] == str("00")]["gravel_thickness"])[0]
         de3 = list(df2.loc[df2["de"] == str(de3)]["potholes"])[0]
         de4 = list(df2.loc[df2["de"] == str(de4)]["corrugations"])[0]
         de5 = list(df2.loc[df2["de"] == str(de5)]["rutting"])[0]
@@ -1572,15 +1578,6 @@ def main():
         else x["surface_condition_index_sci"],
         axis=1,
     )
-    df.drop(["index"], axis=1, inplace=True)
-
-    index_df = deduct_flex_calc(df, sci_weights_lookup_df)
-    df = pd.merge(
-        df,
-        index_df[["visual_assessment_id", "index"]],
-        on="visual_assessment_id",
-        how="left",
-    )
     df["sci_deduct"] = df.apply(
         lambda x: x["index"]
         if x["index"] > 0 and x["sci_deduct"] == None
@@ -1589,26 +1586,23 @@ def main():
     )
     df.drop(["index"], axis=1, inplace=True)
 
-    index_df = calculate_mni(df)
-    df = pd.merge(
-        df,
-        index_df[["visual_assessment_id", "index"]],
-        on="visual_assessment_id",
-        how="left",
-    )
-    df["fci_deduct"] = df.apply(
-        lambda x: x["index"]
-        if x["index"] > 0 and x["fci_deduct"] == None
-        else x["fci_deduct"],
-        axis=1,
-    )
-    df["maintenance_need_index_mni"] = df.apply(
-        lambda x: x["index"]
-        if x["index"] > 0 and x["maintenance_need_index_mni"] == None
-        else x["maintenance_need_index_mni"],
-        axis=1,
-    )
-    df.drop(["index"], axis=1, inplace=True)
+    try:
+        index_df = calculate_mni(df)
+        df = pd.merge(
+            df,
+            index_df[["visual_assessment_id", "index"]],
+            on="visual_assessment_id",
+            how="left",
+        )
+        df["maintenance_need_index_mni"] = df.apply(
+            lambda x: x["index"]
+            if x["index"] > 0 and x["maintenance_need_index_mni"] == None
+            else x["maintenance_need_index_mni"],
+            axis=1,
+        )
+        df.drop(["index"], axis=1, inplace=True)
+    except:
+        pass
 
     df.to_sql(
         TABLE,
