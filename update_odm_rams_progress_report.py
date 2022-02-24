@@ -31,9 +31,10 @@ for col in roads_df.columns:
         roads_df[col] = roads_df[col].astype(str)
     except:
         pass
+
 roads_df['local_municipality_id'] = roads_df['local_municipality_id'].astype(int)
-roads_df['town_id'] = roads_df['town_id'].astype(int)
-roads_df['asset_subtype_id'] = roads_df['asset_subtype_id'].astype(int)
+roads_df['town_id'] = roads_df['town_id'].astype(float)
+roads_df['asset_subtype_id'] = roads_df['asset_subtype_id'].astype(float)
 roads_df['length'] = roads_df['length'].astype(float)
 
 df.drop(

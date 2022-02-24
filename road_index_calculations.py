@@ -1,3 +1,5 @@
+from lib2to3.pgen2.pgen import DFAState
+from cv2 import DFT_COMPLEX_INPUT
 import geopandas as gpd
 import pandas as pd
 from sqlalchemy import create_engine
@@ -868,7 +870,8 @@ def deduct_flex_calc(df, df2):
     filter_cols = [
         col for col in df if col.startswith("f_") or col == "visual_assessment_id"
     ]
-    df = df.loc[:, filter_cols].fillna(0)
+    df = df.loc[:, filter_cols]
+    df = df.fillna(0)
     df["index"] = None
 
     for idx, row in df.iterrows():
@@ -1446,8 +1449,8 @@ def pci_merge(df, index_df):
     return df
 
 
-def main():
-    df = gpd.GeoDataFrame.from_postgis(QRY, ENGINE, geom_col="geometry")
+def main(df):
+    df = df
     for col in df.columns:
         try:
             df[col] = df[col].astype(int).fillna(0)
@@ -1604,15 +1607,8 @@ def main():
     except:
         pass
 
-    df.to_sql(
-        TABLE,
-        ENGINE,
-        schema=SCHEMA,
-        if_exists="append",
-        index=False,
-        method=psql_insert_copy,
-    )
+    return df
 
 
 if __name__ == "__main__":
-    main()
+    main(df)

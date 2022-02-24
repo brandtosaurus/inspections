@@ -12,6 +12,8 @@ import csv
 
 from win10toast import ToastNotifier
 
+import road_index_calculations as calc
+
 toast = ToastNotifier()
 toast.show_toast(
     "SCRIPT RUNNING",
@@ -396,9 +398,13 @@ df[
 inspected = df[df["status"] == "inspected"]
 inspected["segment_id"] = inspected["asset_id"]
 
+# inspected = calc.main(inspected)
+
 created = df[df["status"] == "created"]
 created["asset_id"] = created["fulcrum_id"]
 created["segment_id"] = created["fulcrum_id"]
+
+# created = calc.main(created)
 
 # inspected.drop('ownership', axis=1, inplace=True)
 # created.drop('ownership', axis=1, inplace=True)
