@@ -184,10 +184,13 @@ def deduct_block_calc(df, df2):
             pass
 
     for col in df.columns:
-        try:
-            df[col] = df[col].str(0)
-        except:
+        if col == "visual_assessment_id":
             pass
+        else:
+            try:
+                df[col] = df[col].str(0)
+            except:
+                pass
     df["index"] = None
 
     for idx, row in df.iterrows():
@@ -396,10 +399,13 @@ def deduct_conc_calc(df, df2):
             pass
 
     for col in df.columns:
-        try:
-            df[col] = df[col].str(0)
-        except:
+        if col == "visual_assessment_id":
             pass
+        else:
+            try:
+                df[col] = df[col].str(0)
+            except:
+                pass
     df["index"] = None
 
     for idx, row in df.iterrows():
@@ -666,10 +672,13 @@ def deduct_unpaved_calc(df, df2):
             pass
 
     for col in df.columns:
-        try:
-            df[col] = df[col].str(0)
-        except:
+        if col == "visual_assessment_id":
             pass
+        else:
+            try:
+                df[col] = df[col].str(0)
+            except:
+                pass
     df["index"] = None
 
     for idx, row in df.iterrows():
@@ -913,10 +922,13 @@ def deduct_flex_calc(df, df2):
             pass
 
     for col in df.columns:
-        try:
-            df[col] = df[col].str(0)
-        except:
+        if col == "visual_assessment_id":
             pass
+        else:
+            try:
+                df[col] = df[col].str(0)
+            except:
+                pass
     df["index"] = None
 
     for idx, row in df.iterrows():
@@ -1196,7 +1208,15 @@ def vci_sci_calc(df, df2, dem_dict):
     filter_cols = [
         col for col in df if col.startswith("f_") or col == "visual_assessment_id"
     ]
-    df = df.loc[:, filter_cols].fillna("0")
+    df = df.loc[:, filter_cols]
+    for col in df.columns:
+        if col == "visual_assessment_id":
+            pass
+        else:
+            try:
+                df[col] = df[col].str(0)
+            except:
+                pass
     df["index"] = None
 
     dem_dict = dem_dict
@@ -1678,7 +1698,7 @@ def main():
         method=psql_insert_copy,
     )
 
-    # return df
+    return df
 
 
 if __name__ == "__main__":
