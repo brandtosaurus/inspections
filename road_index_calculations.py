@@ -1,5 +1,3 @@
-from lib2to3.pgen2.pgen import DFAState
-from cv2 import DFT_COMPLEX_INPUT
 import geopandas as gpd
 import pandas as pd
 from sqlalchemy import create_engine
@@ -12,7 +10,11 @@ TABLE = "road_visual_assessment_main"
 SCHEMA = "assessment"
 
 QRY = """SELECT * FROM assessment.road_visual_assessment rva WHERE rva.visual_condition_index_vci IS NULL 
-		AND rva.visual_gravel_index_vgi IS NULL AND rva.structural_condition_index_stci IS null"""
+		AND rva.visual_gravel_index_vgi IS NULL 
+        AND rva.structural_condition_index_stci IS null"""
+
+COLUMNS_LIST_QRY = """SELECT * FROM assessment.road_visual_assessment limit 1"""
+
 ASSETS_QRY = """SELECT * FROM infrastructure.asset where asset_type_id = 2"""
 RISFSA_QRY = """SELECT * FROM lookups.risfsa"""
 RAINFALL_QRY = """SELECT * FROM base_layers.mean_rainfall"""
@@ -174,7 +176,18 @@ def deduct_block_calc(df, df2):
     filter_cols = [
         col for col in df if col.startswith("b_") or col == "visual_assessment_id"
     ]
-    df = df.loc[:, filter_cols].fillna(0)
+    df = df.loc[:, filter_cols]
+    for col in df.columns:
+        try:
+            df[col] = df[col].astype(str)
+        except:
+            pass
+
+    for col in df.columns:
+        try:
+            df[col] = df[col].str(0)
+        except:
+            pass
     df["index"] = None
 
     for idx, row in df.iterrows():
@@ -375,7 +388,18 @@ def deduct_conc_calc(df, df2):
     filter_cols = [
         col for col in df if col.startswith("c_") or col == "visual_assessment_id"
     ]
-    df = df.loc[:, filter_cols].fillna(0)
+    df = df.loc[:, filter_cols]
+    for col in df.columns:
+        try:
+            df[col] = df[col].astype(str)
+        except:
+            pass
+
+    for col in df.columns:
+        try:
+            df[col] = df[col].str(0)
+        except:
+            pass
     df["index"] = None
 
     for idx, row in df.iterrows():
@@ -634,7 +658,18 @@ def deduct_unpaved_calc(df, df2):
     filter_cols = [
         col for col in df if col.startswith("u_") or col == "visual_assessment_id"
     ]
-    df = df.loc[:, filter_cols].fillna(0)
+    df = df.loc[:, filter_cols]
+    for col in df.columns:
+        try:
+            df[col] = df[col].astype(str)
+        except:
+            pass
+
+    for col in df.columns:
+        try:
+            df[col] = df[col].str(0)
+        except:
+            pass
     df["index"] = None
 
     for idx, row in df.iterrows():
@@ -871,7 +906,17 @@ def deduct_flex_calc(df, df2):
         col for col in df if col.startswith("f_") or col == "visual_assessment_id"
     ]
     df = df.loc[:, filter_cols]
-    df = df.fillna(0)
+    for col in df.columns:
+        try:
+            df[col] = df[col].astype(str)
+        except:
+            pass
+
+    for col in df.columns:
+        try:
+            df[col] = df[col].str(0)
+        except:
+            pass
     df["index"] = None
 
     for idx, row in df.iterrows():
@@ -1151,7 +1196,7 @@ def vci_sci_calc(df, df2, dem_dict):
     filter_cols = [
         col for col in df if col.startswith("f_") or col == "visual_assessment_id"
     ]
-    df = df.loc[:, filter_cols].fillna(0)
+    df = df.loc[:, filter_cols].fillna("0")
     df["index"] = None
 
     dem_dict = dem_dict
@@ -1449,11 +1494,28 @@ def pci_merge(df, index_df):
     return df
 
 
-def main(df):
-    df = df
+def main():
+
+    df = gpd.GeoDataFrame.from_postgis(
+        QRY, ENGINE, geom_col="geometry", index_col="visual_assessment_id"
+    )
+
+    COLUMNS_LIST = gpd.GeoDataFrame.from_postgis(
+        COLUMNS_LIST_QRY, ENGINE, geom_col="geometry", index_col="visual_assessment_id"
+    )
+    COLUMNS_LIST = COLUMNS_LIST.columns
+
+    df = df[df.columns.intersection(COLUMNS_LIST)]
+
     for col in df.columns:
         try:
-            df[col] = df[col].astype(int).fillna(0)
+            df[col] = df[col].astype(int)
+        except:
+            pass
+
+    for col in df.columns:
+        try:
+            df[col] = df[col].fillna(0)
         except:
             pass
 
@@ -1607,8 +1669,17 @@ def main(df):
     except:
         pass
 
-    return df
+    df.to_sql(
+        TABLE,
+        ENGINE,
+        schema=SCHEMA,
+        if_exists="append",
+        index=False,
+        method=psql_insert_copy,
+    )
+
+    # return df
 
 
 if __name__ == "__main__":
-    main(df)
+    main()
