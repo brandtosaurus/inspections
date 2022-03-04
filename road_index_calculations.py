@@ -180,7 +180,7 @@ def deduct_block_calc(df, df2):
     for col in df.columns:
         try:
             df[col] = df[col].astype(str)
-        except:
+        except Exception as e:
             pass
 
     for col in df.columns:
@@ -188,8 +188,8 @@ def deduct_block_calc(df, df2):
             pass
         else:
             try:
-                df[col] = df[col].str(0)
-            except:
+                df[col] = df[col].str[:1]
+            except Exception as e:
                 pass
     df["index"] = None
 
@@ -395,7 +395,7 @@ def deduct_conc_calc(df, df2):
     for col in df.columns:
         try:
             df[col] = df[col].astype(str)
-        except:
+        except Exception as e:
             pass
 
     for col in df.columns:
@@ -403,8 +403,8 @@ def deduct_conc_calc(df, df2):
             pass
         else:
             try:
-                df[col] = df[col].str(0)
-            except:
+                df[col] = df[col].str[:1]
+            except Exception as e:
                 pass
     df["index"] = None
 
@@ -668,7 +668,7 @@ def deduct_unpaved_calc(df, df2):
     for col in df.columns:
         try:
             df[col] = df[col].astype(str)
-        except:
+        except Exception as e:
             pass
 
     for col in df.columns:
@@ -676,8 +676,8 @@ def deduct_unpaved_calc(df, df2):
             pass
         else:
             try:
-                df[col] = df[col].str(0)
-            except:
+                df[col] = df[col].str[:1]
+            except Exception as e:
                 pass
     df["index"] = None
 
@@ -918,7 +918,7 @@ def deduct_flex_calc(df, df2):
     for col in df.columns:
         try:
             df[col] = df[col].astype(str)
-        except:
+        except Exception as e:
             pass
 
     for col in df.columns:
@@ -926,9 +926,10 @@ def deduct_flex_calc(df, df2):
             pass
         else:
             try:
-                df[col] = df[col].str(0)
-            except:
+                df[col] = df[col].str[:1]
+            except Exception as e:
                 pass
+
     df["index"] = None
 
     for idx, row in df.iterrows():
@@ -1210,12 +1211,18 @@ def vci_sci_calc(df, df2, dem_dict):
     ]
     df = df.loc[:, filter_cols]
     for col in df.columns:
+        try:
+            df[col] = df[col].astype(str)
+        except Exception as e:
+            pass
+
+    for col in df.columns:
         if col == "visual_assessment_id":
             pass
         else:
             try:
-                df[col] = df[col].str(0)
-            except:
+                df[col] = df[col].str[:1]
+            except Exception as e:
                 pass
     df["index"] = None
 
@@ -1689,6 +1696,11 @@ def main():
     except:
         pass
 
+    return df
+
+
+if __name__ == "__main__":
+    df = main()
     df.to_sql(
         TABLE,
         ENGINE,
@@ -1698,8 +1710,3 @@ def main():
         method=psql_insert_copy,
     )
 
-    return df
-
-
-if __name__ == "__main__":
-    main()
