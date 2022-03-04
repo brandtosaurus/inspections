@@ -1476,21 +1476,32 @@ def vci_sci_calc(df, df2, dem_dict):
 
 
 def stci_merge(df, index_df):
-    df = pd.merge(
-        df,
-        index_df[["visual_assessment_id", "index"]],
-        on="visual_assessment_id",
-        how="left",
-    )
+    if "visual_assessment_id" in df.columns:
+        df = df.set_index("visual_assessment_id")
+    else:
+        pass
+
+    if "visual_assessment_id" in index_df.columns:
+        index_df = index_df.set_index("visual_assessment_id")
+    else:
+        pass
+
+    df = df.join(index_df, how="left")
+
     df["fci_deduct"] = df.apply(
         lambda x: x["index"]
-        if x["index"] > 0 and x["fci_deduct"] == None
+        if x["index"] > 0 and (x["fci_deduct"] == 0 or x["fci_deduct"] == None)
         else x["fci_deduct"],
         axis=1,
     )
+
     df["structural_condition_index_stci"] = df.apply(
         lambda x: x["index"]
-        if x["index"] > 0 and x["structural_condition_index_stci"] == None
+        if x["index"] > 0
+        and (
+            x["structural_condition_index_stci"] == 0
+            or x["structural_condition_index_stci"] == None
+        )
         else x["structural_condition_index_stci"],
         axis=1,
     )
@@ -1499,24 +1510,36 @@ def stci_merge(df, index_df):
 
 
 def pci_merge(df, index_df):
-    df = pd.merge(
-        df,
-        index_df[["visual_assessment_id", "index"]],
-        on="visual_assessment_id",
-        how="left",
-    )
-    df["pci_deduct"] = df.apply(
+    if "visual_assessment_id" in df.columns:
+        df = df.set_index("visual_assessment_id")
+    else:
+        pass
+
+    if "visual_assessment_id" in index_df.columns:
+        index_df = index_df.set_index("visual_assessment_id")
+    else:
+        pass
+
+    df = df.join(index_df, how="left")
+
+    df["fci_deduct"] = df.apply(
         lambda x: x["index"]
-        if x["index"] > 0 and x["pci_deduct"] == None
-        else x["pci_deduct"],
+        if x["index"] > 0 and (x["fci_deduct"] == 0 or x["fci_deduct"] == None)
+        else x["fci_deduct"],
         axis=1,
     )
-    df["surface_condition_index_sci"] = df.apply(
+
+    df["structural_condition_index_stci"] = df.apply(
         lambda x: x["index"]
-        if x["index"] > 0 and x["surface_condition_index_sci"] == None
-        else x["surface_condition_index_sci"],
+        if x["index"] > 0
+        and (
+            x["structural_condition_index_stci"] == 0
+            or x["structural_condition_index_stci"] == None
+        )
+        else x["structural_condition_index_stci"],
         axis=1,
     )
+
     df.drop(["index"], axis=1, inplace=True)
     return df
 
@@ -1592,87 +1615,81 @@ def main():
     df = pci_merge(df, index_df)
 
     index_df = deduct_unpaved_calc(df, vgi_weights_lookup_df)
-    df = pd.merge(
-        df,
-        index_df[["visual_assessment_id", "index"]],
-        on="visual_assessment_id",
-        how="left",
-    )
+    df = df.join(index_df, how="left")
     df["visual_condition_index_vci"] = df.apply(
         lambda x: x["index"]
-        if x["index"] > 0 and x["visual_condition_index_vci"] == None
+        if x["index"] > 0
+        and (
+            x["visual_condition_index_vci"] == None
+            or x["visual_condition_index_vci"] == 0
+        )
         else x["visual_condition_index_vci"],
         axis=1,
     )
+
     df["visual_gravel_index_vgi"] = df.apply(
         lambda x: x["index"]
-        if x["index"] > 0 and x["visual_gravel_index_vgi"] == None
+        if x["index"] > 0
+        and (x["visual_gravel_index_vgi"] == None or x["visual_gravel_index_vgi"] == 0)
         else x["visual_gravel_index_vgi"],
         axis=1,
     )
+
     df.drop(["index"], axis=1, inplace=True)
 
     index_df = vci_sci_calc(df, vci_weights_lookup_df, vci_dem_dict)
-    df = pd.merge(
-        df,
-        index_df[["visual_assessment_id", "index"]],
-        on="visual_assessment_id",
-        how="left",
-    )
+    df = df.join(index_df, how="left")
     df["visual_condition_index_vci"] = df.apply(
         lambda x: x["index"]
-        if x["index"] > 0 and x["visual_condition_index_vci"] == None
+        if x["index"] > 0
+        and (
+            x["visual_condition_index_vci"] == None
+            or x["visual_condition_index_vci"] == 0
+        )
         else x["visual_condition_index_vci"],
         axis=1,
     )
     df.drop(["index"], axis=1, inplace=True)
 
     index_df = vci_sci_calc(df, sci_weights_lookup_df, sci_dem_dict)
-    df = pd.merge(
-        df,
-        index_df[["visual_assessment_id", "index"]],
-        on="visual_assessment_id",
-        how="left",
-    )
+    df = df.join(index_df, how="left")
     df["surface_condition_index_sci"] = df.apply(
         lambda x: x["index"]
-        if x["index"] > 0 and x["surface_condition_index_sci"] == None
+        if x["index"] > 0
+        and (
+            x["surface_condition_index_sci"] == None
+            or x["surface_condition_index_sci"] == 0
+        )
         else x["surface_condition_index_sci"],
         axis=1,
     )
     df.drop(["index"], axis=1, inplace=True)
 
     index_df = deduct_flex_calc(df, pci_flex_lookup_df)
-    df = pd.merge(
-        df,
-        index_df[["visual_assessment_id", "index"]],
-        on="visual_assessment_id",
-        how="left",
-    )
+    df = df.join(index_df, how="left")
     df["pci_deduct"] = df.apply(
         lambda x: x["index"]
-        if x["index"] > 0 and x["pci_deduct"] == None
+        if x["index"] > 0 and (x["pci_deduct"] == None or x["pci_deduct"] == 0)
         else x["pci_deduct"],
         axis=1,
     )
     df.drop(["index"], axis=1, inplace=True)
 
     index_df = deduct_flex_calc(df, sci_flex_lookup_df)
-    df = pd.merge(
-        df,
-        index_df[["visual_assessment_id", "index"]],
-        on="visual_assessment_id",
-        how="left",
-    )
+    df = df.join(index_df, how="left")
     df["surface_condition_index_sci"] = df.apply(
         lambda x: x["index"]
-        if x["index"] > 0 and x["surface_condition_index_sci"] == None
+        if x["index"] > 0
+        and (
+            x["surface_condition_index_sci"] == None
+            or x["surface_condition_index_sci"] == 0
+        )
         else x["surface_condition_index_sci"],
         axis=1,
     )
     df["sci_deduct"] = df.apply(
         lambda x: x["index"]
-        if x["index"] > 0 and x["sci_deduct"] == None
+        if x["index"] > 0 and (x["sci_deduct"] == None or x["sci_deduct"] == 0)
         else x["sci_deduct"],
         axis=1,
     )
@@ -1680,15 +1697,14 @@ def main():
 
     try:
         index_df = calculate_mni(df)
-        df = pd.merge(
-            df,
-            index_df[["visual_assessment_id", "index"]],
-            on="visual_assessment_id",
-            how="left",
-        )
+        df = df.join(index_df, how="left")
         df["maintenance_need_index_mni"] = df.apply(
             lambda x: x["index"]
-            if x["index"] > 0 and x["maintenance_need_index_mni"] == None
+            if x["index"] > 0
+            and (
+                x["maintenance_need_index_mni"] == None
+                or x["maintenance_need_index_mni"] == 0
+            )
             else x["maintenance_need_index_mni"],
             axis=1,
         )
@@ -1709,4 +1725,3 @@ if __name__ == "__main__":
         index=False,
         method=psql_insert_copy,
     )
-
