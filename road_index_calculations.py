@@ -1209,12 +1209,12 @@ def vci_sci_calc(df, df2, dem_dict):
     filter_cols = [
         col for col in df if col.startswith("f_") or col == "visual_assessment_id"
     ]
-    df = df.loc[:, filter_cols]
-    for col in df.columns:
-        try:
-            df[col] = df[col].astype(str)
-        except Exception as e:
-            pass
+    # df = df.loc[:, filter_cols]
+    # for col in df.columns:
+    #     try:
+    #         df[col] = df[col].astype(str)
+    #     except Exception as e:
+    #         pass
 
     for col in df.columns:
         if col == "visual_assessment_id":
