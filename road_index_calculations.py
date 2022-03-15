@@ -2,6 +2,9 @@ import geopandas as gpd
 import pandas as pd
 from sqlalchemy import create_engine
 
+from io import StringIO
+import csv
+
 ENGINE = create_engine(
     "postgresql://postgres:$admin@localhost:5432/asset_management_master"
 )
@@ -1209,7 +1212,7 @@ def vci_sci_calc(df, df2, dem_dict):
     filter_cols = [
         col for col in df if col.startswith("f_") or col == "visual_assessment_id"
     ]
-    # df = df.loc[:, filter_cols]
+    df = df.loc[:, filter_cols]
     # for col in df.columns:
     #     try:
     #         df[col] = df[col].astype(str)
@@ -1637,33 +1640,6 @@ def main():
 
     df.drop(["index"], axis=1, inplace=True)
 
-    index_df = vci_sci_calc(df, vci_weights_lookup_df, vci_dem_dict)
-    df = df.join(index_df, how="left")
-    df["visual_condition_index_vci"] = df.apply(
-        lambda x: x["index"]
-        if x["index"] > 0
-        and (
-            x["visual_condition_index_vci"] == None
-            or x["visual_condition_index_vci"] == 0
-        )
-        else x["visual_condition_index_vci"],
-        axis=1,
-    )
-    df.drop(["index"], axis=1, inplace=True)
-
-    index_df = vci_sci_calc(df, sci_weights_lookup_df, sci_dem_dict)
-    df = df.join(index_df, how="left")
-    df["surface_condition_index_sci"] = df.apply(
-        lambda x: x["index"]
-        if x["index"] > 0
-        and (
-            x["surface_condition_index_sci"] == None
-            or x["surface_condition_index_sci"] == 0
-        )
-        else x["surface_condition_index_sci"],
-        axis=1,
-    )
-    df.drop(["index"], axis=1, inplace=True)
 
     index_df = deduct_flex_calc(df, pci_flex_lookup_df)
     df = df.join(index_df, how="left")
@@ -1694,6 +1670,37 @@ def main():
         axis=1,
     )
     df.drop(["index"], axis=1, inplace=True)
+
+    try:
+        index_df = vci_sci_calc(df, vci_weights_lookup_df, vci_dem_dict)
+        df = df.join(index_df, how="left")
+        df["visual_condition_index_vci"] = df.apply(
+            lambda x: x["index"]
+            if x["index"] > 0
+            and (
+                x["visual_condition_index_vci"] == None
+                or x["visual_condition_index_vci"] == 0
+            )
+            else x["visual_condition_index_vci"],
+            axis=1,
+        )
+        df.drop(["index"], axis=1, inplace=True)
+
+        index_df = vci_sci_calc(df, sci_weights_lookup_df, sci_dem_dict)
+        df = df.join(index_df, how="left")
+        df["surface_condition_index_sci"] = df.apply(
+            lambda x: x["index"]
+            if x["index"] > 0
+            and (
+                x["surface_condition_index_sci"] == None
+                or x["surface_condition_index_sci"] == 0
+            )
+            else x["surface_condition_index_sci"],
+            axis=1,
+        )
+        df.drop(["index"], axis=1, inplace=True)
+    except Exception as e:
+        print()
 
     try:
         index_df = calculate_mni(df)
