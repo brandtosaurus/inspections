@@ -1,6 +1,6 @@
 import pandas as pd
-from openpyxl import load_workbook
-from openpyxl.utils.dataframe import dataframe_to_rows
+##from openpyxl import load_workbook
+##from openpyxl.utils.dataframe import dataframe_to_rows
 from sqlalchemy import create_engine
 
 from win10toast import ToastNotifier
@@ -10,7 +10,9 @@ WORKBOOK = r"C:\Users\MB2705851\OneDrive - Surbana Jurong Private Limited\PROJEC
 SHEETNAME = "Sheet1"
 ROADSHEET = "Sheet2"
 
-ROADS_QRY = """SELECT * FROM infrastructure.asset where district_municipality_id = 50 AND asset_type_id = 2"""
+INSPECTION_COLS = ['fulcrum_id','status', 'asset_id', 'asset_type_id', 'asset_name', 'road_width', 'date_inspected', 'length']
+
+ROADS_QRY = """SELECT asset_id, local_municipality_id, town_id, ownership_id, ownership, asset_name, risfsa_id, risfsa_class_name, asset_subtype_id, length, width FROM infrastructure.asset where district_municipality_id = 50 AND asset_type_id = 2"""
 
 ENGINE = create_engine(
     "postgresql://postgres:$admin@localhost:5432/asset_management_master"
@@ -25,6 +27,7 @@ toast.show_toast(
 
 
 df = pd.read_csv(CSV, low_memory=False)
+
 roads_df = pd.read_sql_query(ROADS_QRY, ENGINE)
 for col in roads_df.columns:
     try:
@@ -36,37 +39,31 @@ roads_df['local_municipality_id'] = roads_df['local_municipality_id'].astype(int
 roads_df['town_id'] = roads_df['town_id'].astype(float)
 roads_df['asset_subtype_id'] = roads_df['asset_subtype_id'].astype(float)
 roads_df['length'] = roads_df['length'].astype(float)
+roads_df['width'] = roads_df['width'].astype(float)
 
-df.drop(
-    [
-        "gps_altitude",
-        "gps_horizontal_accuracy",
-        "gps_vertical_accuracy",
-        "gps_speed",
-        "gps_course",
-        "gps_course",
-    ],
-    axis=1,
-    inplace=True,
-)
+df = df[df.columns.intersection(INSPECTION_COLS)]
 
-wb = load_workbook(WORKBOOK, data_only=True)
+with pd.ExcelWriter(WORKBOOK) as writer:
+    df.to_excel(writer, sheet_name=SHEETNAME, index=False)
+    roads_df.to_excel(writer, sheet_name=ROADSHEET, index=False)
 
-ws = wb[SHEETNAME]
-rows = dataframe_to_rows(df, index=False, header=True)
-
-for r_idx, row in enumerate(rows, 1):
-    for c_idx, value in enumerate(row, 1):
-        ws.cell(row=r_idx, column=c_idx, value=value)
-
-ws2 = wb[ROADSHEET]
-rows2 = dataframe_to_rows(roads_df, index=False, header=True)
-
-for r_idx, row in enumerate(rows2, 1):
-    for c_idx, value in enumerate(row, 1):
-        ws2.cell(row=r_idx, column=c_idx, value=value)
-
-wb.save(WORKBOOK)
+##wb = load_workbook(WORKBOOK, data_only=True)
+##
+##ws = wb[SHEETNAME]
+##rows = dataframe_to_rows(df, index=False, header=True)
+##
+##for r_idx, row in enumerate(rows, 1):
+##    for c_idx, value in enumerate(row, 1):
+##        ws.cell(row=r_idx, column=c_idx, value=value)
+##
+##ws2 = wb[ROADSHEET]
+##rows2 = dataframe_to_rows(roads_df, index=False, header=True)
+##
+##for r_idx, row in enumerate(rows2, 1):
+##    for c_idx, value in enumerate(row, 1):
+##        ws2.cell(row=r_idx, column=c_idx, value=value)
+##
+##wb.save(WORKBOOK)
 
 toast.show_toast(
     "SCRIPT RAN SUCCESSFULLY",
